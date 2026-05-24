@@ -1,0 +1,35 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: opportunity-management
+  datasource:
+    url: jdbc:h2:mem:bomsdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: password
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+      settings:
+        web-allow-others: true
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+# Enterprise WeChat (WeCom) Integration Settings
+wecom:
+  # Enterprise ID (CorpID)
+  corp-id: wwdemo1234567890
+  # Application Agent ID
+  agent-id: 1000002
+  # Application Secret
+  secret: secret_demo_1234567890abcdefghijklmnopqrst
+  # OAuth Redirect URL (Base URL of Vue Frontend)
+  redirect-uri: http://localhost:5173/login-callback
+  # Enable real WeCom API integration (true: call WeCom servers, false: sandbox mockup mode)
+  sandbox-mode: true

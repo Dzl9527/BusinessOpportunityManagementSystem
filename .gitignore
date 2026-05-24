@@ -1,0 +1,37 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Logs
+*.log
+backend/*.log
+frontend/*.log
+
+# Runtime and temporary work files
+.codex_spreadsheet_work/
+outputs/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Backend
+backend/target/
+backend/.m2repo/
+backend/.maven/
+
+# Java / Maven
+*.class
+*.jar
+*.war
+*.ear
+
+# Environment / secrets
+.env
+.env.*
+application-local.yml
+application-local.properties
