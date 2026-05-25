@@ -8,6 +8,7 @@
 
 推荐检索范围：
 
+- `docs/product/`：产品总览、版本规划和业务范围
 - `docs/requirements/`：需求与 PRD
 - `docs/design/`：系统设计、数据库设计、接口设计、SQL 草案
 - `docs/decisions/`：关键产品/技术决策
@@ -24,6 +25,7 @@
 ## 当前文档
 
 - `docs/product/商机管理系统-产品总览.md`
+- `docs/product/版本规划.md`
 - `docs/requirements/2026-05-24-设备事业群商机字段改造需求.md`
 - `docs/requirements/2026-05-24-用户端商机提报数据结构设计.md`
 - `docs/design/2026-05-24-设备事业群商机字段技术改造方案.md`
