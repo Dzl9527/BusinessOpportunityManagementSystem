@@ -34,6 +34,16 @@
             <span class="detail-label">指派负责人</span>
             <span class="detail-value">{{ opp.owner }}</span>
           </div>
+          <div class="detail-item">
+            <span class="detail-label">设备需求版本</span>
+            <span class="detail-value">V{{ opp.deviceRequirementVersion || 1 }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">需求设备类型状态</span>
+            <span :class="['oa-status-pill', lockStatusClass(opp.deviceRequirementLockStatus)]">
+              {{ lockStatusLabel(opp.deviceRequirementLockStatus) }}
+            </span>
+          </div>
         </div>
 
         <!-- Detail tabs switcher -->
@@ -58,6 +68,55 @@
             <div class="detail-item">
               <span class="detail-label">商机获取渠道</span>
               <span class="detail-value">{{ opp.source || '暂未录入' }}</span>
+            </div>
+
+            <div style="border-top: 1px solid var(--border-color); padding-top: 16px;">
+              <div class="oa-section-header">
+                <h4 style="font-size: 14px; font-weight: 600; color: var(--text-secondary);">OA流程关联</h4>
+                <button
+                  v-if="canStartReportFlow(opp)"
+                  class="btn-secondary"
+                  type="button"
+                  @click="handleStartReportFlow"
+                  style="padding: 8px 12px; font-size: 12px;"
+                >
+                  发起OA商机报备
+                </button>
+              </div>
+              <div class="oa-info-grid">
+                <div>
+                  <span>商机报备流程号</span>
+                  <strong>{{ opp.reportFlowNo || '未生成' }}</strong>
+                </div>
+                <div>
+                  <span>商机报备状态</span>
+                  <strong>{{ reportStatusLabel(opp.reportFlowStatus) }}</strong>
+                </div>
+                <div>
+                  <span>报备归档时间</span>
+                  <strong>{{ opp.reportArchivedAt || '-' }}</strong>
+                </div>
+                <div>
+                  <span>投标制作流程号</span>
+                  <strong>{{ opp.bidDocumentFlowNo || '未发起' }}</strong>
+                </div>
+                <div>
+                  <span>投标制作状态</span>
+                  <strong>{{ bidStatusLabel(opp.bidDocumentFlowStatus) }}</strong>
+                </div>
+                <div>
+                  <span>锁定流程号</span>
+                  <strong>{{ opp.deviceRequirementLockedByFlowNo || '-' }}</strong>
+                </div>
+                <div>
+                  <span>锁定节点</span>
+                  <strong>{{ opp.deviceRequirementLockedAtNode || '-' }}</strong>
+                </div>
+                <div>
+                  <span>锁定时间</span>
+                  <strong>{{ opp.deviceRequirementLockedAt || '-' }}</strong>
+                </div>
+              </div>
             </div>
             
             <div style="border-top: 1px solid var(--border-color); padding-top: 16px;">
@@ -247,7 +306,47 @@ export default {
     const permissionLabel = (source) => {
       if (source === 'ADMIN') return '管理员'
       if (source === 'WHITELIST') return '白名单授权'
+      if (source === 'SYSTEM') return '系统/OA回写'
       return '本人'
+    }
+
+    const lockStatusLabel = (status) => {
+      if (status === 'SOFT_LOCKED') return '临时冻结'
+      if (status === 'HARD_LOCKED') return '06节点硬锁定'
+      return '未锁定'
+    }
+
+    const lockStatusClass = (status) => {
+      if (status === 'SOFT_LOCKED') return 'soft'
+      if (status === 'HARD_LOCKED') return 'hard'
+      return 'open'
+    }
+
+    const reportStatusLabel = (status) => {
+      const labels = {
+        NOT_STARTED: '未发起',
+        IN_PROGRESS: '审批中',
+        ARCHIVED: '已归档',
+        REJECTED: '已驳回',
+        CANCELED: '已撤回/作废'
+      }
+      return labels[status] || '未发起'
+    }
+
+    const bidStatusLabel = (status) => {
+      const labels = {
+        NOT_STARTED: '未发起',
+        IN_PROGRESS: '审批中',
+        NODE_06_REACHED: '已到06节点',
+        APPROVED: '已通过',
+        REJECTED: '已驳回',
+        CANCELED: '已撤回/作废'
+      }
+      return labels[status] || '未发起'
+    }
+
+    const canStartReportFlow = (target) => {
+      return target && ['NOT_STARTED', 'REJECTED', 'CANCELED', null, undefined, ''].includes(target.reportFlowStatus)
     }
 
     const handleClose = () => {
@@ -288,6 +387,15 @@ export default {
       }
     }
 
+    const handleStartReportFlow = async () => {
+      if (!opp.value) return
+      const updated = await store.startOaReportFlow(opp.value.id)
+      if (updated) {
+        await fetchDetail(opp.value.id)
+        emit('updated')
+      }
+    }
+
     // Watch drawer visibility to trigger query
     watch(() => props.visible, async (newVal) => {
       if (newVal && props.id) {
@@ -314,10 +422,16 @@ export default {
       STAGES,
       formatCurrency,
       permissionLabel,
+      lockStatusLabel,
+      lockStatusClass,
+      reportStatusLabel,
+      bidStatusLabel,
+      canStartReportFlow,
       handleClose,
       handleAddTask,
       handleToggleTask,
-      handleAddActivity
+      handleAddActivity,
+      handleStartReportFlow
     }
   }
 }

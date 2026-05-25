@@ -46,7 +46,10 @@
             </td>
             <td>{{ opp.company || '-' }}</td>
             <td>{{ opp.industry || '-' }}</td>
-            <td>{{ opp.deviceTypes || '-' }}</td>
+            <td>
+              {{ opp.deviceTypes || '-' }}
+              <div v-if="isDeviceTypeLocked(opp)" class="muted-line">{{ deviceTypeLockText(opp) }}</div>
+            </td>
             <td style="font-weight: 700;">{{ formatBusinessAmount(opp) }}</td>
             <td>{{ opp.winRateLabel || `${opp.probability || 0}%` }}</td>
             <td><span class="progress-pill">{{ opp.businessProgressStatus || '新提报' }}</span></td>
@@ -111,7 +114,10 @@
             </div>
 
             <div class="form-grid" v-if="activeStep === 1">
-              <Field label="需求设备类型 *"><MultiSelect v-model="form.deviceTypes" :items="optionList('deviceTypes')" required /></Field>
+              <Field label="需求设备类型 *">
+                <MultiSelect v-model="form.deviceTypes" :items="optionList('deviceTypes')" :disabled="isDeviceTypeInputDisabled(form)" required />
+                <div v-if="isDeviceTypeLocked(form)" class="form-help warning">{{ deviceTypeEditHelpText(form) }}</div>
+              </Field>
               <Field label="需求设备品类型号 *"><input class="form-control" v-model="form.deviceModels" required></Field>
               <Field label="需求数量（台）"><input type="number" class="form-control" v-model.number="form.demandQuantity" min="0"></Field>
               <Field label="预估采购金额 *"><input type="number" class="form-control" v-model.number="form.estimatedPurchaseAmount" min="0" step="0.01" required></Field>
@@ -235,10 +241,11 @@ const BooleanSelect = defineComponent({
 })
 
 const MultiSelect = defineComponent({
-  props: { modelValue: String, items: Array, required: Boolean },
+  props: { modelValue: String, items: Array, required: Boolean, disabled: Boolean },
   emits: ['update:modelValue'],
   setup(props, { emit }) {
     const toggle = (item) => {
+      if (props.disabled) return
       const values = (props.modelValue || '').split(',').map(v => v.trim()).filter(Boolean)
       const next = values.includes(item) ? values.filter(v => v !== item) : [...values, item]
       emit('update:modelValue', next.join(', '))
@@ -247,7 +254,8 @@ const MultiSelect = defineComponent({
       const values = (props.modelValue || '').split(',').map(v => v.trim()).filter(Boolean)
       return h('button', {
         type: 'button',
-        class: ['multi-option', values.includes(item) ? 'active' : ''],
+        disabled: props.disabled,
+        class: ['multi-option', values.includes(item) ? 'active' : '', props.disabled ? 'disabled' : ''],
         onClick: () => toggle(item)
       }, item)
     }))
@@ -291,6 +299,37 @@ export default {
         return `${opp.estimatedPurchaseAmount}${opp.estimatedPurchaseAmountUnit || ''}`
       }
       return new Intl.NumberFormat('zh-CN', { style: 'currency', currency: 'CNY', minimumFractionDigits: 0 }).format(opp.value || 0)
+    }
+
+    const isDeviceTypeLocked = (opp) => {
+      return ['SOFT_LOCKED', 'HARD_LOCKED'].includes(opp?.deviceRequirementLockStatus)
+    }
+
+    const canOverrideLockedDeviceType = computed(() => {
+      return store.user.value?.role === 'ADMIN' || store.user.value?.canViewAll
+    })
+
+    const isDeviceTypeInputDisabled = (opp) => {
+      return isDeviceTypeLocked(opp) && !canOverrideLockedDeviceType.value
+    }
+
+    const deviceTypeLockText = (opp) => {
+      if (opp?.deviceRequirementLockStatus === 'HARD_LOCKED') {
+        return '06节点后已硬锁定'
+      }
+      if (opp?.deviceRequirementLockStatus === 'SOFT_LOCKED') {
+        return '投标流程中临时冻结'
+      }
+      return ''
+    }
+
+    const deviceTypeEditHelpText = (opp) => {
+      const text = deviceTypeLockText(opp)
+      if (!text) return ''
+      if (canOverrideLockedDeviceType.value) {
+        return `${text}，管理员特殊修正会记录高风险操作`
+      }
+      return text
     }
 
     const newForm = () => ({
@@ -447,6 +486,10 @@ export default {
       selectedOppId,
       optionList,
       formatBusinessAmount,
+      isDeviceTypeLocked,
+      isDeviceTypeInputDisabled,
+      deviceTypeLockText,
+      deviceTypeEditHelpText,
       resetFilters,
       openEditOpp,
       handleSubmit,

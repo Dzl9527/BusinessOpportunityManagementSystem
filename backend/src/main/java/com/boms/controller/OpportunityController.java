@@ -70,6 +70,18 @@ public class OpportunityController {
         put("lost", 0);
     }};
 
+    private static final Set<String> DEVICE_REQUIREMENT_VERSION_FIELDS = Set.of(
+            "deviceTypes",
+            "deviceModels",
+            "requiresExclusiveAuthorization",
+            "authorizedCategories",
+            "canPrepareParams",
+            "supplierCompany",
+            "estimatedPurchaseAmount",
+            "estimatedPurchaseAmountUnit",
+            "bidDeadline"
+    );
+
     private String getNowString() {
         return LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
     }
@@ -132,6 +144,25 @@ public class OpportunityController {
         return true;
     }
 
+    private boolean isDeviceTypeLocked(Opportunity opp) {
+        return "SOFT_LOCKED".equalsIgnoreCase(opp.getDeviceRequirementLockStatus())
+                || "HARD_LOCKED".equalsIgnoreCase(opp.getDeviceRequirementLockStatus());
+    }
+
+    private boolean isDeviceTypeChanged(Opportunity opp, Opportunity updatedData) {
+        return !Objects.equals(opp.getDeviceTypes(), updatedData.getDeviceTypes());
+    }
+
+    private int nextDeviceRequirementVersion(Opportunity opp) {
+        return Optional.ofNullable(opp.getDeviceRequirementVersion()).orElse(1) + 1;
+    }
+
+    private boolean hasDeviceRequirementVersionChange(Map<String, String> before, Opportunity opp) {
+        Map<String, String> after = auditService.snapshot(opp);
+        return DEVICE_REQUIREMENT_VERSION_FIELDS.stream()
+                .anyMatch(field -> !Objects.equals(before.get(field), after.get(field)));
+    }
+
     private double toYuan(Double amount, String unit) {
         if (amount == null) {
             return 0.0;
@@ -154,6 +185,18 @@ public class OpportunityController {
         }
         if (opp.getReminderStatus() == null || opp.getReminderStatus().isBlank()) {
             opp.setReminderStatus("未提醒");
+        }
+        if (opp.getDeviceRequirementVersion() == null || opp.getDeviceRequirementVersion() < 1) {
+            opp.setDeviceRequirementVersion(1);
+        }
+        if (opp.getDeviceRequirementLockStatus() == null || opp.getDeviceRequirementLockStatus().isBlank()) {
+            opp.setDeviceRequirementLockStatus("UNLOCKED");
+        }
+        if (opp.getReportFlowStatus() == null || opp.getReportFlowStatus().isBlank()) {
+            opp.setReportFlowStatus("NOT_STARTED");
+        }
+        if (opp.getBidDocumentFlowStatus() == null || opp.getBidDocumentFlowStatus().isBlank()) {
+            opp.setBidDocumentFlowStatus("NOT_STARTED");
         }
         if (opp.getEstimatedPurchaseAmountUnit() == null || opp.getEstimatedPurchaseAmountUnit().isBlank()) {
             opp.setEstimatedPurchaseAmountUnit("万元");
@@ -481,10 +524,15 @@ public class OpportunityController {
             if (!permissionService.canEdit(currentUser, opp)) {
                 return ResponseEntity.status(403).<Opportunity>build();
             }
+            boolean lockedDeviceTypeChange = isDeviceTypeLocked(opp) && isDeviceTypeChanged(opp, updatedData);
+            if (lockedDeviceTypeChange && !currentUser.isAdmin()) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).<Opportunity>build();
+            }
             Map<String, String> before = auditService.snapshot(opp);
             String oldStage = opp.getStage();
             String oldProgress = opp.getBusinessProgressStatus();
             String permissionSource = permissionService.permissionSource(currentUser, opp);
+            boolean adminDeviceTypeOverride = lockedDeviceTypeChange && currentUser.isAdmin();
             String creatorUserId = opp.getCreatorUserId();
             String creatorName = opp.getCreatorName();
             String submitterUserId = opp.getSubmitterUserId();
@@ -500,6 +548,17 @@ public class OpportunityController {
             opp.setOwnerUserId(ownerUserId);
             opp.setOwnerName(ownerName);
             opp.setVisibilityStatus(visibilityStatus);
+
+            if (hasDeviceRequirementVersionChange(before, opp)) {
+                opp.setDeviceRequirementVersion(nextDeviceRequirementVersion(opp));
+            }
+
+            if (adminDeviceTypeOverride) {
+                ActivityLog overrideLog = new ActivityLog("system",
+                        "管理员特殊修正已锁定的需求设备类型，已记录高风险操作。",
+                        getNowString(), opp);
+                opp.getActivities().add(0, overrideLog);
+            }
 
             if (!Objects.equals(oldStage, opp.getStage())) {
                 String oldLabel = STAGES.getOrDefault(oldStage, oldStage);

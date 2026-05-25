@@ -244,7 +244,48 @@ export function useStore() {
       await fetchMetrics()
     } catch (e) {
       console.error('Update failed', e)
-      showToast('更新商机资料失败', 'error')
+      if (e.response?.status === 409) {
+        showToast('需求设备类型已被OA流程锁定，不能修改', 'error')
+      } else {
+        showToast('更新商机资料失败', 'error')
+      }
+    }
+  }
+
+  const startOaReportFlow = async (oppId, reportFlowNo = '') => {
+    try {
+      const payload = {
+        ...currentUserParams(),
+        reportFlowNo
+      }
+      const response = await axios.post(`${API_BASE}/oa/opportunities/${oppId}/report-flow/start`, payload)
+      showToast('OA商机报备流程已发起', 'success')
+      await fetchMyOpportunities()
+      await fetchMetrics()
+      return response.data
+    } catch (e) {
+      console.error('Start OA report flow failed', e)
+      if (e.response?.status === 403) {
+        showToast('无权发起该商机的OA报备流程', 'error')
+      } else {
+        showToast('发起OA商机报备失败', 'error')
+      }
+      return null
+    }
+  }
+
+  const fetchBidDocumentPrefill = async (reportFlowNo) => {
+    try {
+      const response = await axios.get(`${API_BASE}/oa/report-flows/${reportFlowNo}/bid-document-prefill`)
+      return response.data
+    } catch (e) {
+      console.error('Fetch OA bid prefill failed', e)
+      if (e.response?.status === 409) {
+        showToast('商机报备流程未归档，请先完成OA归档', 'error')
+      } else {
+        showToast('获取投标文件制作预填数据失败', 'error')
+      }
+      return null
     }
   }
 
@@ -332,6 +373,8 @@ export function useStore() {
     submitOpportunity,
     checkDuplicates,
     updateOpp,
+    startOaReportFlow,
+    fetchBidDocumentPrefill,
     deleteOpp,
     addAttachment,
     addTask,

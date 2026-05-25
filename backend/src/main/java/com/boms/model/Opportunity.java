@@ -85,6 +85,16 @@ public class Opportunity {
     private String a3BusinessManager;
     private String businessProgressStatus;
     private String reminderStatus;
+    private Integer deviceRequirementVersion;
+    private String deviceRequirementLockStatus;
+    private String deviceRequirementLockedByFlowNo;
+    private String deviceRequirementLockedAtNode;
+    private String deviceRequirementLockedAt;
+    private String reportFlowNo;
+    private String reportFlowStatus;
+    private String reportArchivedAt;
+    private String bidDocumentFlowNo;
+    private String bidDocumentFlowStatus;
 
     @Column(length = 3000)
     private String weeklyProgress;
@@ -588,6 +598,86 @@ public class Opportunity {
 
     public void setReminderStatus(String reminderStatus) {
         this.reminderStatus = reminderStatus;
+    }
+
+    public Integer getDeviceRequirementVersion() {
+        return deviceRequirementVersion;
+    }
+
+    public void setDeviceRequirementVersion(Integer deviceRequirementVersion) {
+        this.deviceRequirementVersion = deviceRequirementVersion;
+    }
+
+    public String getDeviceRequirementLockStatus() {
+        return deviceRequirementLockStatus;
+    }
+
+    public void setDeviceRequirementLockStatus(String deviceRequirementLockStatus) {
+        this.deviceRequirementLockStatus = deviceRequirementLockStatus;
+    }
+
+    public String getDeviceRequirementLockedByFlowNo() {
+        return deviceRequirementLockedByFlowNo;
+    }
+
+    public void setDeviceRequirementLockedByFlowNo(String deviceRequirementLockedByFlowNo) {
+        this.deviceRequirementLockedByFlowNo = deviceRequirementLockedByFlowNo;
+    }
+
+    public String getDeviceRequirementLockedAtNode() {
+        return deviceRequirementLockedAtNode;
+    }
+
+    public void setDeviceRequirementLockedAtNode(String deviceRequirementLockedAtNode) {
+        this.deviceRequirementLockedAtNode = deviceRequirementLockedAtNode;
+    }
+
+    public String getDeviceRequirementLockedAt() {
+        return deviceRequirementLockedAt;
+    }
+
+    public void setDeviceRequirementLockedAt(String deviceRequirementLockedAt) {
+        this.deviceRequirementLockedAt = deviceRequirementLockedAt;
+    }
+
+    public String getReportFlowNo() {
+        return reportFlowNo;
+    }
+
+    public void setReportFlowNo(String reportFlowNo) {
+        this.reportFlowNo = reportFlowNo;
+    }
+
+    public String getReportFlowStatus() {
+        return reportFlowStatus;
+    }
+
+    public void setReportFlowStatus(String reportFlowStatus) {
+        this.reportFlowStatus = reportFlowStatus;
+    }
+
+    public String getReportArchivedAt() {
+        return reportArchivedAt;
+    }
+
+    public void setReportArchivedAt(String reportArchivedAt) {
+        this.reportArchivedAt = reportArchivedAt;
+    }
+
+    public String getBidDocumentFlowNo() {
+        return bidDocumentFlowNo;
+    }
+
+    public void setBidDocumentFlowNo(String bidDocumentFlowNo) {
+        this.bidDocumentFlowNo = bidDocumentFlowNo;
+    }
+
+    public String getBidDocumentFlowStatus() {
+        return bidDocumentFlowStatus;
+    }
+
+    public void setBidDocumentFlowStatus(String bidDocumentFlowStatus) {
+        this.bidDocumentFlowStatus = bidDocumentFlowStatus;
     }
 
     public String getWeeklyProgress() {
