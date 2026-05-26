@@ -6,7 +6,7 @@ const routes = [
     path: '/',
     name: 'Dashboard',
     component: () => import('../views/Dashboard.vue'),
-    meta: { requiresAuth: true, title: '数据仪表盘' }
+    meta: { requiresAuth: true, title: '工作台' }
   },
   {
     path: '/kanban',
@@ -27,16 +27,22 @@ const routes = [
     meta: { requiresAuth: true, title: '商机提报' }
   },
   {
+    path: '/profile',
+    name: 'UserCenter',
+    component: () => import('../views/UserCenter.vue'),
+    meta: { requiresAuth: true, title: '用户中心' }
+  },
+  {
     path: '/settings',
     name: 'Settings',
     component: () => import('../views/Settings.vue'),
-    meta: { requiresAuth: true, title: '系统设置' }
+    meta: { requiresAuth: true, requiresAdmin: true, title: '系统设置' }
   },
   {
     path: '/users',
     name: 'Users',
     component: () => import('../views/Users.vue'),
-    meta: { requiresAuth: true, requiresAdmin: true, title: '用户权限' }
+    meta: { requiresAuth: true, requiresAdmin: true, title: '用户管理' }
   },
   {
     path: '/login',

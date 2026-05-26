@@ -3,6 +3,7 @@ import axios from 'axios'
 
 const API_HOST = window.location.hostname || 'localhost'
 const API_BASE = `http://${API_HOST}:8080/api`
+const UI_PREFS_KEY = 'crm_admin_ui_prefs'
 
 export { API_BASE }
 
@@ -69,6 +70,13 @@ axios.interceptors.request.use(config => {
 })
 
 export function useStore() {
+  const getUiPrefs = () => {
+    try {
+      return JSON.parse(localStorage.getItem(UI_PREFS_KEY) || '{}')
+    } catch (e) {
+      return {}
+    }
+  }
   
   const fetchOpportunities = async (filters = {}) => {
     try {
@@ -216,7 +224,9 @@ export function useStore() {
         ...currentUserParams()
       }
       await axios.post(`${API_BASE}/opportunities/submissions`, oppData, { params })
-      showToast('商机提报已提交，并已生成企业微信提醒', 'success')
+      if (getUiPrefs().showSubmitToast !== false) {
+        showToast('商机提报已提交，并已生成企业微信提醒', 'success')
+      }
       await fetchMyOpportunities()
       await fetchMetrics()
     } catch (e) {

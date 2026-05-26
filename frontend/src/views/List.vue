@@ -1,76 +1,124 @@
 <template>
-  <section class="content-panel active">
-    <div class="list-filter-bar opportunity-filter-bar">
-      <div class="search-input-wrapper">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/></svg>
-        <input type="text" class="form-control" v-model="filters.search" placeholder="检索采购单位、项目名称、供应商或型号...">
+  <section class="content-panel active list-page">
+    <div class="mobile-filter-shell">
+      <div class="mobile-filter-summary">
+        <div class="search-input-wrapper mobile-search">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/></svg>
+          <input type="text" class="form-control" v-model="filters.search" placeholder="检索采购单位、项目名称、供应商或型号...">
+        </div>
+
+        <div class="mobile-filter-actions">
+          <button class="btn-secondary mobile-filter-toggle" type="button" @click="toggleAdvancedFilters">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+            </svg>
+            <span>折叠筛选</span>
+            <span v-if="activeFilterCount" class="filter-count-badge">{{ activeFilterCount }}</span>
+          </button>
+          <button v-if="activeFilterCount" class="btn-secondary mobile-reset-btn" type="button" @click="resetFilters">
+            重置
+          </button>
+        </div>
       </div>
-      <select class="form-control" v-model="filters.industry">
-        <option value="all">所有行业</option>
-        <option v-for="item in optionList('industries')" :key="item" :value="item">{{ item }}</option>
-      </select>
-      <select class="form-control" v-model="filters.supplyRegion">
-        <option value="all">所有供货省区</option>
-        <option v-for="item in optionList('regions')" :key="item" :value="item">{{ item }}</option>
-      </select>
-      <select class="form-control" v-model="filters.businessProgressStatus">
-        <option value="all">所有业务进度</option>
-        <option v-for="item in optionList('businessProgressStatuses')" :key="item" :value="item">{{ item }}</option>
-      </select>
-      <button class="btn-secondary" @click="resetFilters" style="width: 100%; height: 44px; justify-content: center;">重置筛选</button>
+
+      <div v-if="activeFilterCount" class="active-filter-tags">
+        <span v-for="item in activeFilterLabels" :key="item" class="active-filter-tag">{{ item }}</span>
+      </div>
+
+      <transition name="filter-collapse">
+        <div v-if="filtersExpanded" class="mobile-filter-panel">
+          <div class="mobile-filter-grid">
+            <div class="form-group">
+              <label class="form-label">行业</label>
+              <select class="form-control" v-model="filters.industry">
+                <option value="all">所有行业</option>
+                <option v-for="item in optionList('industries')" :key="item" :value="item">{{ item }}</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">供货省区</label>
+              <select class="form-control" v-model="filters.supplyRegion">
+                <option value="all">所有供货省区</option>
+                <option v-for="item in optionList('regions')" :key="item" :value="item">{{ item }}</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">业务进度</label>
+              <select class="form-control" v-model="filters.businessProgressStatus">
+                <option value="all">所有业务进度</option>
+                <option v-for="item in optionList('businessProgressStatuses')" :key="item" :value="item">{{ item }}</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="mobile-filter-footer">
+            <button class="btn-secondary" type="button" @click="resetFilters">重置筛选</button>
+            <button class="btn-primary" type="button" @click="filtersExpanded = false">完成</button>
+          </div>
+        </div>
+      </transition>
     </div>
 
-    <div class="table-container">
-      <table class="custom-table opportunity-table">
-        <thead>
-          <tr>
-            <th>项目名称</th>
-            <th>采购单位</th>
-            <th>行业</th>
-            <th>设备类型</th>
-            <th>预估金额</th>
-            <th>赢率</th>
-            <th>业务进度</th>
-            <th>供货省区</th>
-            <th>投标截止</th>
-            <th style="text-align: right;">操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="opp in opportunities" :key="opp.id">
-            <td>
-              <a href="#" @click.prevent="openDetail(opp.id)" style="color: var(--primary); font-weight: 700; text-decoration: none;">
-                {{ opp.name || '未命名项目' }}
-              </a>
-              <div class="muted-line">提报人：{{ opp.submitter || opp.creator || '-' }}</div>
-            </td>
-            <td>{{ opp.company || '-' }}</td>
-            <td>{{ opp.industry || '-' }}</td>
-            <td>
-              {{ opp.deviceTypes || '-' }}
-              <div v-if="isDeviceTypeLocked(opp)" class="muted-line">{{ deviceTypeLockText(opp) }}</div>
-            </td>
-            <td style="font-weight: 700;">{{ formatBusinessAmount(opp) }}</td>
-            <td>{{ opp.winRateLabel || `${opp.probability || 0}%` }}</td>
-            <td><span class="progress-pill">{{ opp.businessProgressStatus || '新提报' }}</span></td>
-            <td>{{ opp.supplyRegion || '-' }}</td>
-            <td>{{ opp.bidDeadline || opp.closeDate || '-' }}</td>
-            <td style="text-align: right;">
-              <div style="display: inline-flex; gap: 8px;">
-                <button class="btn-icon" @click="openEditOpp(opp.id)" title="编辑自己提报的信息" style="width: 32px; height: 32px;">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
-                </button>
-                <button class="btn-icon" @click="handleDelete(opp)" title="删除" style="width: 32px; height: 32px; border-color: var(--danger-light); color: var(--danger);">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-                </button>
-              </div>
-            </td>
-          </tr>
-          <tr v-if="opportunities.length === 0">
-            <td colspan="10" style="text-align: center; color: var(--text-muted); padding: 32px 0;">没有查找到符合条件的商机提报</td>
-          </tr>
-        </tbody>
-      </table>
+    <div class="mobile-list-card">
+      <div class="list-meta-row">
+        <div>
+          <strong>商机结果</strong>
+          <p>{{ opportunities.length }} 条结果</p>
+        </div>
+      </div>
+
+      <div class="table-container mobile-opportunity-table">
+        <table class="custom-table opportunity-table">
+          <thead>
+            <tr>
+              <th>项目名称</th>
+              <th>采购单位</th>
+              <th>行业</th>
+              <th>设备类型</th>
+              <th>预估金额</th>
+              <th>赢率</th>
+              <th>业务进度</th>
+              <th>供货省区</th>
+              <th>投标截止</th>
+              <th style="text-align: right;">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="opp in opportunities" :key="opp.id">
+              <td>
+                <a href="#" @click.prevent="openDetail(opp.id)" style="color: var(--primary); font-weight: 700; text-decoration: none;">
+                  {{ opp.name || '未命名项目' }}
+                </a>
+                <div class="muted-line">提报人：{{ opp.submitter || opp.creator || '-' }}</div>
+              </td>
+              <td>{{ opp.company || '-' }}</td>
+              <td>{{ opp.industry || '-' }}</td>
+              <td>
+                {{ opp.deviceTypes || '-' }}
+                <div v-if="isDeviceTypeLocked(opp)" class="muted-line">{{ deviceTypeLockText(opp) }}</div>
+              </td>
+              <td style="font-weight: 700;">{{ formatBusinessAmount(opp) }}</td>
+              <td>{{ opp.winRateLabel || `${opp.probability || 0}%` }}</td>
+              <td><span class="progress-pill">{{ opp.businessProgressStatus || '新提报' }}</span></td>
+              <td>{{ opp.supplyRegion || '-' }}</td>
+              <td>{{ opp.bidDeadline || opp.closeDate || '-' }}</td>
+              <td style="text-align: right;">
+                <div style="display: inline-flex; gap: 8px;">
+                  <button class="btn-icon" @click="openEditOpp(opp.id)" title="编辑自己提报的信息" style="width: 32px; height: 32px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                  </button>
+                  <button class="btn-icon" @click="handleDelete(opp)" title="删除" style="width: 32px; height: 32px; border-color: var(--danger-light); color: var(--danger);">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr v-if="opportunities.length === 0">
+              <td colspan="10" style="text-align: center; color: var(--text-muted); padding: 32px 0;">没有查找到符合条件的商机提报</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <div class="modal-overlay" v-if="modalVisible">
@@ -266,6 +314,13 @@ export default {
   components: { OpportunityDrawer, Field, SelectInput, BooleanSelect, MultiSelect },
   setup() {
     const store = useStore()
+    const readUiPrefs = () => {
+      try {
+        return JSON.parse(localStorage.getItem('crm_admin_ui_prefs') || '{}')
+      } catch (e) {
+        return {}
+      }
+    }
     const STAGES = {
       prospecting: "发现商机",
       qualification: "资质评估",
@@ -282,6 +337,7 @@ export default {
       businessProgressStatus: 'all'
     })
 
+    const filtersExpanded = ref(readUiPrefs().keepFilterCollapsed === false)
     const modalVisible = ref(false)
     const isEdit = ref(false)
     const form = ref({})
@@ -293,6 +349,16 @@ export default {
     const formSteps = ['基础信息', '设备需求', '授权报备', '投标交付', '组织归属', '进展附件']
 
     const optionList = (key) => store.opportunityOptions.value?.[key] || []
+
+    const activeFilterLabels = computed(() => {
+      const labels = []
+      if (filters.industry !== 'all') labels.push(`行业：${filters.industry}`)
+      if (filters.supplyRegion !== 'all') labels.push(`供货省区：${filters.supplyRegion}`)
+      if (filters.businessProgressStatus !== 'all') labels.push(`业务进度：${filters.businessProgressStatus}`)
+      return labels
+    })
+
+    const activeFilterCount = computed(() => activeFilterLabels.value.length)
 
     const formatBusinessAmount = (opp) => {
       if (opp.estimatedPurchaseAmount !== null && opp.estimatedPurchaseAmount !== undefined) {
@@ -379,6 +445,10 @@ export default {
       filters.industry = 'all'
       filters.supplyRegion = 'all'
       filters.businessProgressStatus = 'all'
+    }
+
+    const toggleAdvancedFilters = () => {
+      filtersExpanded.value = !filtersExpanded.value
     }
 
     const initNewOpp = () => {
@@ -475,6 +545,9 @@ export default {
       STAGES,
       opportunities: store.opportunities,
       filters,
+      filtersExpanded,
+      activeFilterCount,
+      activeFilterLabels,
       modalVisible,
       isEdit,
       form,
@@ -491,6 +564,7 @@ export default {
       deviceTypeLockText,
       deviceTypeEditHelpText,
       resetFilters,
+      toggleAdvancedFilters,
       openEditOpp,
       handleSubmit,
       handleDelete,

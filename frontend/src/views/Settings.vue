@@ -1,98 +1,241 @@
 <template>
-  <section class="content-panel active">
-    <!-- Section 1: WeCom Integration -->
-    <div class="settings-section">
-      <h3 class="settings-section-title" style="display: flex; align-items: center; gap: 8px;">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-message-circle"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
-        <span>企业微信 (WeCom) API 集成设置</span>
-      </h3>
-      <p class="settings-section-desc">配置企业微信开发凭证，支持扫码免密登录、商机指派自动下发企微工作通知消息。</p>
-      
-      <div class="form-grid" style="margin-bottom: 24px; max-width: 800px;">
-        <div class="form-group">
-          <label class="form-label">企业 ID (CorpID)</label>
-          <input type="text" class="form-control" v-model="wecomConfig.corpId">
-        </div>
-        <div class="form-group">
-          <label class="form-label">自建应用 AgentID</label>
-          <input type="text" class="form-control" v-model="wecomConfig.agentId">
-        </div>
-        <div class="form-group form-group-full">
-          <label class="form-label">应用凭证 Secret</label>
-          <input type="password" class="form-control" v-model="wecomConfig.secret">
-        </div>
+  <section class="content-panel active admin-tools-page settings-page">
+    <div class="admin-mobile-header">
+      <div>
+        <h2>系统设置</h2>
+        <p>管理员在这里维护企业微信联调、账号权限、通知偏好和数据管理。</p>
       </div>
-      
-      <div class="settings-btn-group">
-        <button class="btn-primary" @click="saveWecomSettings">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-save"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-          <span>保存企微配置</span>
-        </button>
-        <button class="btn-secondary" @click="syncWecomContacts" :disabled="isSyncing">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-refresh-cw" :class="{ 'spin': isSyncing }"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><polyline points="3 3 3 8 8 8"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><polyline points="16 16 21 16 21 21"/></svg>
-          <span>同步企微通讯录</span>
-        </button>
-      </div>
+      <button class="btn-secondary settings-header-btn" type="button" @click="goUsers">
+        打开用户管理
+      </button>
     </div>
 
-    <!-- Section 2: WeChat Message Push Test -->
-    <div class="settings-section">
-      <h3 class="settings-section-title">消息推送功能联调</h3>
-      <p class="settings-section-desc">测试后端主动向指定的企微账号推送通知消息。默认向您当前登录的测试账号推送。</p>
-      
-      <div style="display: flex; gap: 12px; max-width: 600px; margin-bottom: 16px;">
-        <input type="text" class="form-control" v-model="testMsg" placeholder="输入推送测试文本内容，如：新客户来访提醒...">
-        <button class="btn-primary" @click="sendTestPush" :disabled="isPushing" style="flex-shrink: 0;">
-          <span>测试发送</span>
-        </button>
-      </div>
+    <div class="settings-overview-grid">
+      <article class="settings-overview-card">
+        <span>启用账号</span>
+        <strong>{{ enabledUsersCount }}</strong>
+        <p>当前允许登录系统的企业微信账号数量</p>
+      </article>
+      <article class="settings-overview-card">
+        <span>管理员账号</span>
+        <strong>{{ adminUsersCount }}</strong>
+        <p>具备系统设置与用户管理权限的账号</p>
+      </article>
+      <article class="settings-overview-card">
+        <span>通讯录人数</span>
+        <strong>{{ contactCount }}</strong>
+        <p>最近一次同步到前端的企业微信联系人</p>
+      </article>
+      <article class="settings-overview-card">
+        <span>活跃商机</span>
+        <strong>{{ activeOpportunityCount }}</strong>
+        <p>当前可见范围内处于推进中的商机总数</p>
+      </article>
     </div>
 
-    <!-- Section 3: Data Backup -->
-    <div class="settings-section">
-      <h3 class="settings-section-title">系统数据备份与还原</h3>
-      <p class="settings-section-desc">导出系统商机数据库为 JSON 备份文件，或者导入已备份的 JSON 数据覆盖当前库。</p>
-      <div class="settings-btn-group">
-        <button class="btn-primary" @click="handleExport">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
-          <span>导出商机数据</span>
-        </button>
-        
-        <div class="file-upload-wrapper">
-          <button class="btn-secondary">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-upload"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
-            <span>导入备份还原</span>
+    <div class="admin-tools-grid settings-tools-grid">
+      <section class="admin-mobile-panel">
+        <div class="panel-heading">
+          <h3>组织与权限</h3>
+          <p>处理角色、启用状态和白名单范围，保持查看边界清晰。</p>
+        </div>
+
+        <div class="selected-user-summary">
+          <div>
+            <strong>{{ currentAdminName }}</strong>
+            <span>{{ currentAdminId }}</span>
+          </div>
+          <span class="role-chip">系统管理员</span>
+        </div>
+
+        <div class="tool-card-list">
+          <button class="tool-card-button" type="button" @click="goUsers">
+            <strong>进入用户管理</strong>
+            <p>维护普通用户、领导、管理员以及白名单可见范围。</p>
           </button>
-          <input type="file" class="file-upload-input" @change="handleImport" accept=".json">
-        </div>
-      </div>
-    </div>
 
-    <!-- Section 4: Factory Reset -->
-    <div class="settings-section" style="border-color: var(--danger-light);">
-      <h3 class="settings-section-title" style="color: var(--danger);">系统危险区</h3>
-      <p class="settings-section-desc">清空所有数据库中的更改，并将系统数据重新加载为出厂演示数据状态。</p>
-      <div class="settings-btn-group">
-        <button class="btn-primary" @click="handleResetDb" style="background-color: var(--danger); box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
-          <span>初始化恢复演示数据</span>
-        </button>
-      </div>
+          <div class="admin-setting-card">
+            <span>当前权限策略</span>
+            <p class="settings-card-text">
+              普通用户默认查看本人商机；领导查看本人及白名单范围商机；管理员可查看和维护全部商机。
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="admin-mobile-panel">
+        <div class="panel-heading">
+          <h3>企业微信配置</h3>
+          <p>维护本地调试用的企微参数，并执行通讯录同步。</p>
+        </div>
+
+        <div class="admin-form-stack">
+          <div class="admin-setting-card">
+            <span>企业 ID (CorpID)</span>
+            <input type="text" class="form-control" v-model="wecomConfig.corpId">
+          </div>
+          <div class="admin-setting-card">
+            <span>自建应用 AgentID</span>
+            <input type="text" class="form-control" v-model="wecomConfig.agentId">
+          </div>
+          <div class="admin-setting-card">
+            <span>应用凭证 Secret</span>
+            <input type="password" class="form-control" v-model="wecomConfig.secret">
+          </div>
+          <div class="admin-setting-card">
+            <span>最近通讯录同步</span>
+            <p class="settings-card-text">{{ syncSummary }}</p>
+          </div>
+        </div>
+
+        <div class="stacked-actions">
+          <button class="btn-primary full-width" @click="saveWecomSettings">保存企微配置</button>
+          <button class="btn-secondary full-width" @click="syncWecomContacts" :disabled="isSyncing">
+            {{ isSyncing ? '同步中...' : '同步企微通讯录' }}
+          </button>
+        </div>
+      </section>
+
+      <section class="admin-mobile-panel">
+        <div class="panel-heading">
+          <h3>通知与联调</h3>
+          <p>测试当前账号的企微消息推送能力，并保存当前浏览器的管理偏好。</p>
+        </div>
+
+        <div class="admin-form-stack">
+          <div class="admin-setting-card">
+            <span>测试内容</span>
+            <textarea class="form-control form-textarea admin-textarea" v-model="testMsg" placeholder="输入推送测试文本"></textarea>
+          </div>
+
+          <div class="admin-setting-card">
+            <span>当前端偏好（仅当前浏览器）</span>
+            <div class="settings-checkbox-list">
+              <label class="settings-checkbox-row">
+                <input type="checkbox" v-model="uiPrefs.showSubmitToast">
+                <div class="settings-checkbox-copy">
+                  <strong>保留提报成功提示</strong>
+                  <p>提交商机后继续显示本地成功提示和状态回馈。</p>
+                </div>
+              </label>
+              <label class="settings-checkbox-row">
+                <input type="checkbox" v-model="uiPrefs.highlightRiskActions">
+                <div class="settings-checkbox-copy">
+                  <strong>强调高风险操作</strong>
+                  <p>在初始化、覆盖导入等操作前保留明显提醒。</p>
+                </div>
+              </label>
+              <label class="settings-checkbox-row">
+                <input type="checkbox" v-model="uiPrefs.keepFilterCollapsed">
+                <div class="settings-checkbox-copy">
+                  <strong>默认使用折叠筛选</strong>
+                  <p>列表页保持轻量化入口，减少大筛选区占用空间。</p>
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="stacked-actions">
+          <button class="btn-primary full-width" @click="sendTestPush" :disabled="isPushing">
+            {{ isPushing ? '发送中...' : '测试发送企微消息' }}
+          </button>
+          <button class="btn-secondary full-width" @click="saveUiPrefs">
+            保存当前端偏好
+          </button>
+        </div>
+      </section>
+
+      <section class="admin-mobile-panel">
+        <div class="panel-heading">
+          <h3>数据管理</h3>
+          <p>导出商机数据，或导入已有备份进行恢复。</p>
+        </div>
+
+        <div class="tool-card-list">
+          <button class="tool-card-button" type="button" @click="handleExport">
+            <strong>导出商机数据</strong>
+            <p>下载当前系统数据的 JSON 备份文件。</p>
+          </button>
+
+          <label class="tool-card-button file-card">
+            <strong>导入备份还原</strong>
+            <p>选择 JSON 备份文件并覆盖当前库。</p>
+            <input type="file" class="file-upload-input" @change="handleImport" accept=".json">
+          </label>
+
+          <div class="admin-setting-card">
+            <span>最近数据操作</span>
+            <p class="settings-card-text">{{ lastDataAction }}</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="admin-mobile-panel danger-panel">
+        <div class="panel-heading">
+          <h3>演示环境</h3>
+          <p>仅在演示或重置环境时使用，操作前请再次确认。</p>
+        </div>
+
+        <div class="admin-form-stack">
+          <div class="admin-setting-card">
+            <span>环境说明</span>
+            <p class="settings-card-text">
+              当前版本只调整前后端 UI 表现，不新增后端逻辑。初始化会覆盖当前数据库中的商机记录并恢复演示样例。
+            </p>
+          </div>
+        </div>
+
+        <div class="stacked-actions">
+          <button class="btn-primary full-width danger-button" @click="handleResetDb">
+            初始化恢复演示数据
+          </button>
+        </div>
+      </section>
     </div>
   </section>
 </template>
 
 <script>
-import { ref, reactive, onMounted } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { API_BASE, useStore, showToast } from '../store'
 
+const UI_PREFS_KEY = 'crm_admin_ui_prefs'
+const SYNC_SUMMARY_KEY = 'crm_settings_last_sync'
+const DATA_ACTION_KEY = 'crm_settings_last_data_action'
+
+const defaultUiPrefs = () => ({
+  showSubmitToast: true,
+  highlightRiskActions: true,
+  keepFilterCollapsed: true
+})
+
+const formatNow = () => new Date().toLocaleString('zh-CN', { hour12: false })
+
 export default {
   setup() {
+    const router = useRouter()
     const store = useStore()
     const isSyncing = ref(false)
     const isPushing = ref(false)
+    const syncSummary = ref(localStorage.getItem(SYNC_SUMMARY_KEY) || '暂无同步记录')
+    const lastDataAction = ref(localStorage.getItem(DATA_ACTION_KEY) || '暂无数据操作记录')
     const testMsg = ref('提示：有一笔价值 280,000 元的“智能客服系统采购项目”商机状态已更新！')
+
+    const savedPrefs = (() => {
+      try {
+        return JSON.parse(localStorage.getItem(UI_PREFS_KEY) || '{}')
+      } catch (e) {
+        return {}
+      }
+    })()
+
+    const uiPrefs = reactive({
+      ...defaultUiPrefs(),
+      ...savedPrefs
+    })
 
     const wecomConfig = reactive({
       corpId: localStorage.getItem('wecom_corp_id') || 'wwdemo1234567890',
@@ -100,10 +243,38 @@ export default {
       secret: localStorage.getItem('wecom_secret') || '••••••••••••••••••••••••••••••••'
     })
 
+    const users = computed(() => store.users.value || [])
+    const enabledUsersCount = computed(() => users.value.filter(item => item.enabled).length)
+    const adminUsersCount = computed(() => users.value.filter(item => item.role === 'ADMIN').length)
+    const contactCount = computed(() => store.contacts.value?.length || 0)
+    const activeOpportunityCount = computed(() => store.metrics.value?.activeCount || 0)
+    const currentAdminName = computed(() => store.user.value?.name || '管理员')
+    const currentAdminId = computed(() => store.user.value?.userId || '-')
+
+    const updateSyncSummary = (text) => {
+      syncSummary.value = `${formatNow()} ${text}`
+      localStorage.setItem(SYNC_SUMMARY_KEY, syncSummary.value)
+    }
+
+    const updateDataAction = (text) => {
+      lastDataAction.value = `${formatNow()} ${text}`
+      localStorage.setItem(DATA_ACTION_KEY, lastDataAction.value)
+    }
+
+    const goUsers = () => {
+      router.push({ name: 'Users' })
+    }
+
+    const saveUiPrefs = () => {
+      localStorage.setItem(UI_PREFS_KEY, JSON.stringify({ ...uiPrefs }))
+      showToast('当前端偏好已保存，仅对本浏览器生效', 'success')
+    }
+
     const saveWecomSettings = () => {
       localStorage.setItem('wecom_corp_id', wecomConfig.corpId)
       localStorage.setItem('wecom_agent_id', wecomConfig.agentId)
       localStorage.setItem('wecom_secret', wecomConfig.secret)
+      updateSyncSummary('已保存企业微信本地配置')
       showToast('企业微信配置保存成功！(生产部署需要在后端 application.yml 重新载入生效)', 'success')
     }
 
@@ -111,7 +282,8 @@ export default {
       isSyncing.value = true
       try {
         await store.fetchContacts()
-        showToast('企微通讯录同步成功！已成功加载 3 名销售人员。', 'success')
+        updateSyncSummary(`已同步 ${store.contacts.value?.length || 0} 位企业微信联系人`)
+        showToast(`企微通讯录同步成功！已成功加载 ${store.contacts.value?.length || 0} 名销售人员。`, 'success')
       } catch (err) {
         showToast('同步通讯录失败', 'error')
       } finally {
@@ -127,6 +299,7 @@ export default {
           content: testMsg.value.trim()
         })
         if (response.data.success) {
+          updateSyncSummary('已执行企业微信消息联调')
           showToast(response.data.message, 'success')
         } else {
           showToast(response.data.message, 'error')
@@ -139,11 +312,11 @@ export default {
     }
 
     const handleExport = () => {
-      // Direct redirection to download file from backend
       const params = new URLSearchParams({
         userId: store.user.value?.userId || '',
         userName: store.user.value?.name || ''
       })
+      updateDataAction('已发起数据导出请求')
       window.location.href = `${API_BASE}/wecom/export?${params.toString()}`
       showToast('数据下载请求已发送', 'success')
     }
@@ -160,6 +333,7 @@ export default {
             params: { userId: store.user.value?.userId, userName: store.user.value?.name }
           })
           if (response.data.success) {
+            updateDataAction(`已导入备份文件 ${file.name}`)
             showToast(response.data.message, 'success')
             await store.fetchOpportunities()
             await store.fetchMetrics()
@@ -176,9 +350,12 @@ export default {
     }
 
     const handleResetDb = async () => {
-      if (confirm('确定要清除所有本地录入的商机，并将系统初始化为预设的演示数据吗？\n\n此操作会清空当前数据库中所有的记录。')) {
+      const riskNotice = uiPrefs.highlightRiskActions
+        ? '确定要清除所有本地录入的商机，并将系统初始化为预设的演示数据吗？\n\n此操作会清空当前数据库中所有的记录。'
+        : '确定要初始化演示数据吗？'
+
+      if (confirm(riskNotice)) {
         try {
-          // Default mock data to restore
           const defaultMocks = [
             {
               name: "智能客服系统采购项目",
@@ -281,11 +458,12 @@ export default {
               ]
             }
           ]
-          
+
           const response = await axios.post(`${API_BASE}/wecom/import`, defaultMocks, {
             params: { userId: store.user.value?.userId, userName: store.user.value?.name }
           })
           if (response.data.success) {
+            updateDataAction('已恢复演示数据')
             showToast('数据库初始化重置成功！', 'success')
             await store.fetchOpportunities()
             await store.fetchMetrics()
@@ -296,15 +474,30 @@ export default {
       }
     }
 
-    onMounted(() => {
-      store.fetchContacts()
+    onMounted(async () => {
+      await Promise.all([
+        store.fetchUsers(),
+        store.fetchContacts(),
+        store.fetchMetrics()
+      ])
     })
 
     return {
       wecomConfig,
+      uiPrefs,
       testMsg,
       isSyncing,
       isPushing,
+      syncSummary,
+      lastDataAction,
+      enabledUsersCount,
+      adminUsersCount,
+      contactCount,
+      activeOpportunityCount,
+      currentAdminName,
+      currentAdminId,
+      goUsers,
+      saveUiPrefs,
       saveWecomSettings,
       syncWecomContacts,
       sendTestPush,
@@ -315,12 +508,3 @@ export default {
   }
 }
 </script>
-
-<style scoped>
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-.spin {
-  animation: spin 1s linear infinite;
-}
-</style>

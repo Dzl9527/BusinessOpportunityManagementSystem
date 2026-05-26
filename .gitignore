@@ -7,6 +7,8 @@ Thumbs.db
 
 # Logs
 *.log
+*.pid
+logs/
 backend/*.log
 frontend/*.log
 
