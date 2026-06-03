@@ -10,188 +10,310 @@
       </button>
     </div>
 
-    <div class="settings-overview-grid">
-      <article class="settings-overview-card">
-        <span>启用账号</span>
-        <strong>{{ enabledUsersCount }}</strong>
-        <p>当前允许登录系统的企业微信账号数量</p>
-      </article>
-      <article class="settings-overview-card">
-        <span>管理员账号</span>
-        <strong>{{ adminUsersCount }}</strong>
-        <p>具备系统设置与用户管理权限的账号</p>
-      </article>
-      <article class="settings-overview-card">
-        <span>通讯录人数</span>
-        <strong>{{ contactCount }}</strong>
-        <p>最近一次同步到前端的企业微信联系人</p>
-      </article>
-      <article class="settings-overview-card">
-        <span>活跃商机</span>
-        <strong>{{ activeOpportunityCount }}</strong>
-        <p>当前可见范围内处于推进中的商机总数</p>
-      </article>
-    </div>
 
-    <div class="admin-tools-grid settings-tools-grid">
-      <section class="admin-mobile-panel">
-        <div class="panel-heading">
-          <h3>组织与权限</h3>
-          <p>处理角色、启用状态和白名单范围，保持查看边界清晰。</p>
-        </div>
+    <nav class="settings-tabs">
+      <button 
+        type="button" 
+        class="tab-btn" 
+        :class="{ active: activeTab === 'wecom' }" 
+        @click="activeTab = 'wecom'"
+      >
+        基础对接
+      </button>
+      <button 
+        type="button" 
+        class="tab-btn" 
+        :class="{ active: activeTab === 'reminder' }" 
+        @click="activeTab = 'reminder'"
+      >
+        智能提醒配置
+      </button>
+      <button 
+        type="button" 
+        class="tab-btn" 
+        :class="{ active: activeTab === 'auth' }" 
+        @click="activeTab = 'auth'"
+      >
+        组织权限管理
+      </button>
+      <button 
+        type="button" 
+        class="tab-btn" 
+        :class="{ active: activeTab === 'data' }" 
+        @click="activeTab = 'data'"
+      >
+        数据与联调
+      </button>
+    </nav>
 
-        <div class="selected-user-summary">
-          <div>
-            <strong>{{ currentAdminName }}</strong>
-            <span>{{ currentAdminId }}</span>
-          </div>
-          <span class="role-chip">系统管理员</span>
-        </div>
-
-        <div class="tool-card-list">
-          <button class="tool-card-button" type="button" @click="goUsers">
-            <strong>进入用户管理</strong>
-            <p>维护普通用户、领导、管理员以及白名单可见范围。</p>
-          </button>
-
-          <div class="admin-setting-card">
-            <span>当前权限策略</span>
-            <p class="settings-card-text">
-              普通用户默认查看本人商机；领导查看本人及白名单范围商机；管理员可查看和维护全部商机。
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <section class="admin-mobile-panel">
-        <div class="panel-heading">
-          <h3>企业微信配置</h3>
-          <p>维护本地调试用的企微参数，并执行通讯录同步。</p>
-        </div>
-
-        <div class="admin-form-stack">
-          <div class="admin-setting-card">
-            <span>企业 ID (CorpID)</span>
-            <input type="text" class="form-control" v-model="wecomConfig.corpId">
-          </div>
-          <div class="admin-setting-card">
-            <span>自建应用 AgentID</span>
-            <input type="text" class="form-control" v-model="wecomConfig.agentId">
-          </div>
-          <div class="admin-setting-card">
-            <span>应用凭证 Secret</span>
-            <input type="password" class="form-control" v-model="wecomConfig.secret">
-          </div>
-          <div class="admin-setting-card">
-            <span>最近通讯录同步</span>
-            <p class="settings-card-text">{{ syncSummary }}</p>
-          </div>
-        </div>
-
-        <div class="stacked-actions">
-          <button class="btn-primary full-width" @click="saveWecomSettings">保存企微配置</button>
-          <button class="btn-secondary full-width" @click="syncWecomContacts" :disabled="isSyncing">
-            {{ isSyncing ? '同步中...' : '同步企微通讯录' }}
-          </button>
-        </div>
-      </section>
-
-      <section class="admin-mobile-panel">
-        <div class="panel-heading">
-          <h3>通知与联调</h3>
-          <p>测试当前账号的企微消息推送能力，并保存当前浏览器的管理偏好。</p>
-        </div>
-
-        <div class="admin-form-stack">
-          <div class="admin-setting-card">
-            <span>测试内容</span>
-            <textarea class="form-control form-textarea admin-textarea" v-model="testMsg" placeholder="输入推送测试文本"></textarea>
+    <div class="settings-tab-content">
+      <!-- TAB: WeCom -->
+      <div v-if="activeTab === 'wecom'" class="settings-single-grid">
+        <section class="admin-mobile-panel">
+          <div class="panel-heading">
+            <h3>企业微信配置</h3>
+            <p>维护本地调试用的企微参数，并执行通讯录同步。</p>
           </div>
 
-          <div class="admin-setting-card">
-            <span>当前端偏好（仅当前浏览器）</span>
-            <div class="settings-checkbox-list">
-              <label class="settings-checkbox-row">
-                <input type="checkbox" v-model="uiPrefs.showSubmitToast">
-                <div class="settings-checkbox-copy">
-                  <strong>保留提报成功提示</strong>
-                  <p>提交商机后继续显示本地成功提示和状态回馈。</p>
-                </div>
-              </label>
-              <label class="settings-checkbox-row">
-                <input type="checkbox" v-model="uiPrefs.highlightRiskActions">
-                <div class="settings-checkbox-copy">
-                  <strong>强调高风险操作</strong>
-                  <p>在初始化、覆盖导入等操作前保留明显提醒。</p>
-                </div>
-              </label>
-              <label class="settings-checkbox-row">
-                <input type="checkbox" v-model="uiPrefs.keepFilterCollapsed">
-                <div class="settings-checkbox-copy">
-                  <strong>默认使用折叠筛选</strong>
-                  <p>列表页保持轻量化入口，减少大筛选区占用空间。</p>
-                </div>
-              </label>
+          <div class="admin-form-stack">
+            <div class="admin-setting-card">
+              <span>企业 ID (CorpID)</span>
+              <input type="text" class="form-control" v-model="wecomConfig.corpId">
+            </div>
+            <div class="admin-setting-card">
+              <span>自建应用 AgentID</span>
+              <input type="text" class="form-control" v-model="wecomConfig.agentId">
+            </div>
+            <div class="admin-setting-card">
+              <span>应用凭证 Secret</span>
+              <input type="password" class="form-control" v-model="wecomConfig.secret">
+            </div>
+            <div class="admin-setting-card">
+              <span>最近通讯录同步</span>
+              <p class="settings-card-text">{{ syncSummary }}</p>
             </div>
           </div>
-        </div>
 
-        <div class="stacked-actions">
-          <button class="btn-primary full-width" @click="sendTestPush" :disabled="isPushing">
-            {{ isPushing ? '发送中...' : '测试发送企微消息' }}
-          </button>
-          <button class="btn-secondary full-width" @click="saveUiPrefs">
-            保存当前端偏好
-          </button>
-        </div>
-      </section>
-
-      <section class="admin-mobile-panel">
-        <div class="panel-heading">
-          <h3>数据管理</h3>
-          <p>导出商机数据，或导入已有备份进行恢复。</p>
-        </div>
-
-        <div class="tool-card-list">
-          <button class="tool-card-button" type="button" @click="handleExport">
-            <strong>导出商机数据</strong>
-            <p>下载当前系统数据的 JSON 备份文件。</p>
-          </button>
-
-          <label class="tool-card-button file-card">
-            <strong>导入备份还原</strong>
-            <p>选择 JSON 备份文件并覆盖当前库。</p>
-            <input type="file" class="file-upload-input" @change="handleImport" accept=".json">
-          </label>
-
-          <div class="admin-setting-card">
-            <span>最近数据操作</span>
-            <p class="settings-card-text">{{ lastDataAction }}</p>
+          <div class="stacked-actions">
+            <button class="btn-primary full-width" @click="saveWecomSettings">保存企微配置</button>
+            <button class="btn-secondary full-width" @click="syncWecomContacts" :disabled="isSyncing">
+              {{ isSyncing ? '同步中...' : '同步企微通讯录' }}
+            </button>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
 
-      <section class="admin-mobile-panel danger-panel">
-        <div class="panel-heading">
-          <h3>演示环境</h3>
-          <p>仅在演示或重置环境时使用，操作前请再次确认。</p>
-        </div>
-
-        <div class="admin-form-stack">
-          <div class="admin-setting-card">
-            <span>环境说明</span>
-            <p class="settings-card-text">
-              当前版本只调整前后端 UI 表现，不新增后端逻辑。初始化会覆盖当前数据库中的商机记录并恢复演示样例。
-            </p>
+      <!-- TAB: Reminder -->
+      <div v-if="activeTab === 'reminder'" class="settings-single-grid">
+        <section class="admin-mobile-panel">
+          <div class="panel-heading">
+            <h3>商机提醒配置</h3>
+            <p>配置自动提醒场景触发规则，包括投标截止、预计交付提前天数与开关状态。</p>
           </div>
-        </div>
 
-        <div class="stacked-actions">
-          <button class="btn-primary full-width danger-button" @click="handleResetDb">
-            初始化恢复演示数据
-          </button>
-        </div>
-      </section>
+          <div class="admin-form-stack">
+            <div class="admin-setting-card">
+              <span>投标截止提前提醒天数</span>
+              <input type="number" class="form-control" v-model="reminderConfig['reminder.bid_deadline_days']" min="1" max="30">
+            </div>
+            <div class="admin-setting-card">
+              <span>预计交付提前提醒天数</span>
+              <input type="number" class="form-control" v-model="reminderConfig['reminder.expected_delivery_days']" min="1" max="30">
+            </div>
+            <div class="admin-setting-card">
+              <span>周跟进未更新周期（天数）</span>
+              <input type="number" class="form-control" v-model="reminderConfig['reminder.weekly_update_days']" min="1" max="30">
+            </div>
+
+            <div class="admin-setting-card">
+              <span>启用提醒规则</span>
+              <div class="settings-checkbox-list">
+                <label class="settings-checkbox-row">
+                  <input type="checkbox" v-model="reminderSwitches.bid_deadline">
+                  <div class="settings-checkbox-copy">
+                    <strong>投标截止提醒</strong>
+                    <p>在投标截止日期前 N 天提醒负责人跟进。</p>
+                  </div>
+                </label>
+                <label class="settings-checkbox-row">
+                  <input type="checkbox" v-model="reminderSwitches.expected_delivery">
+                  <div class="settings-checkbox-copy">
+                    <strong>预计交付提醒</strong>
+                    <p>在预计交付日期前 N 天提醒负责人跟进。</p>
+                  </div>
+                </label>
+                <label class="settings-checkbox-row">
+                  <input type="checkbox" v-model="reminderSwitches.weekly_update">
+                  <div class="settings-checkbox-copy">
+                    <strong>周跟进更新提醒</strong>
+                    <p>超期未更新进展时发送周更新提醒。</p>
+                  </div>
+                </label>
+                <label class="settings-checkbox-row">
+                  <input type="checkbox" v-model="reminderSwitches.auth_followup">
+                  <div class="settings-checkbox-copy">
+                    <strong>唯一授权跟进提醒</strong>
+                    <p>需唯一授权但无品类或无授权附件时发送提醒。</p>
+                  </div>
+                </label>
+                <label class="settings-checkbox-row">
+                  <input type="checkbox" v-model="reminderSwitches.report_followup">
+                  <div class="settings-checkbox-copy">
+                    <strong>商机报备催办提醒</strong>
+                    <p>投标临近但未成功报备时发送提醒。</p>
+                  </div>
+                </label>
+                <label class="settings-checkbox-row">
+                  <input type="checkbox" v-model="reminderSwitches.bid_result">
+                  <div class="settings-checkbox-copy">
+                    <strong>中标结果补录提醒</strong>
+                    <p>投标已截止但未录入中标状态时发送提醒。</p>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="stacked-actions">
+            <button class="btn-primary full-width" @click="saveReminderSettings" :disabled="isSavingConfig">
+              {{ isSavingConfig ? '保存中...' : '保存提醒配置' }}
+            </button>
+            <button class="btn-secondary full-width" @click="triggerReminderScan" :disabled="isScanning">
+              {{ isScanning ? '扫描提醒中...' : '立即执行提醒扫描' }}
+            </button>
+          </div>
+        </section>
+      </div>
+
+      <!-- TAB: Auth -->
+      <div v-if="activeTab === 'auth'" class="settings-single-grid">
+        <section class="admin-mobile-panel">
+          <div class="panel-heading">
+            <h3>组织与权限</h3>
+            <p>处理角色、启用状态和白名单范围，保持查看边界清晰。</p>
+          </div>
+
+          <div class="settings-overview-grid cols-3">
+            <article class="settings-overview-card">
+              <span>启用账号</span>
+              <strong>{{ enabledUsersCount }}</strong>
+              <p>当前允许登录系统的企业微信账号数量</p>
+            </article>
+            <article class="settings-overview-card">
+              <span>管理员账号</span>
+              <strong>{{ adminUsersCount }}</strong>
+              <p>具备系统设置与用户管理权限的账号</p>
+            </article>
+            <article class="settings-overview-card">
+              <span>通讯录人数</span>
+              <strong>{{ contactCount }}</strong>
+              <p>最近一次同步到前端的企业微信联系人</p>
+            </article>
+          </div>
+
+          <div class="selected-user-summary">
+            <div>
+              <strong>{{ currentAdminName }}</strong>
+              <span>{{ currentAdminId }}</span>
+            </div>
+            <span class="role-chip">系统管理员</span>
+          </div>
+
+          <div class="tool-card-list">
+            <button class="tool-card-button" type="button" @click="goUsers">
+              <strong>进入用户管理</strong>
+              <p>维护普通用户、领导、管理员以及白名单可见范围。</p>
+            </button>
+
+            <div class="admin-setting-card">
+              <span>当前权限策略</span>
+              <p class="settings-card-text">
+                普通用户默认查看本人商机；领导查看本人及白名单范围商机；管理员可查看和维护全部商机。
+              </p>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- TAB: Data & Testing -->
+      <div v-if="activeTab === 'data'" class="admin-tools-grid settings-tools-grid">
+        <section class="admin-mobile-panel">
+          <div class="panel-heading">
+            <h3>通知与联调</h3>
+            <p>测试当前账号的企微消息推送能力，并保存当前浏览器的管理偏好。</p>
+          </div>
+
+          <div class="admin-form-stack">
+            <div class="admin-setting-card">
+              <span>测试内容</span>
+              <textarea class="form-control form-textarea admin-textarea" v-model="testMsg" placeholder="输入推送测试文本"></textarea>
+            </div>
+
+            <div class="admin-setting-card">
+              <span>当前端偏好（仅当前浏览器）</span>
+              <div class="settings-checkbox-list">
+                <label class="settings-checkbox-row">
+                  <input type="checkbox" v-model="uiPrefs.showSubmitToast">
+                  <div class="settings-checkbox-copy">
+                    <strong>保留提报成功提示</strong>
+                    <p>提交商机后继续显示本地成功提示和状态回馈。</p>
+                  </div>
+                </label>
+                <label class="settings-checkbox-row">
+                  <input type="checkbox" v-model="uiPrefs.highlightRiskActions">
+                  <div class="settings-checkbox-copy">
+                    <strong>强调高风险操作</strong>
+                    <p>在初始化、覆盖导入等操作前保留明显提醒。</p>
+                  </div>
+                </label>
+                <label class="settings-checkbox-row">
+                  <input type="checkbox" v-model="uiPrefs.keepFilterCollapsed">
+                  <div class="settings-checkbox-copy">
+                    <strong>默认使用折叠筛选</strong>
+                    <p>列表页保持轻量化入口，减少大筛选区占用空间。</p>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="stacked-actions">
+            <button class="btn-primary full-width" @click="sendTestPush" :disabled="isPushing">
+              {{ isPushing ? '发送中...' : '测试发送企微消息' }}
+            </button>
+            <button class="btn-secondary full-width" @click="saveUiPrefs">
+              保存当前端偏好
+            </button>
+          </div>
+        </section>
+
+        <section class="admin-mobile-panel">
+          <div class="panel-heading">
+            <h3>数据管理</h3>
+            <p>导出商机数据，或导入已有备份进行恢复。</p>
+          </div>
+
+          <div class="tool-card-list">
+            <button class="tool-card-button" type="button" @click="handleExport">
+              <strong>导出商机数据</strong>
+              <p>下载当前系统数据的 JSON 备份文件。</p>
+            </button>
+
+            <label class="tool-card-button file-card">
+              <strong>导入备份还原</strong>
+              <p>选择 JSON 备份文件并覆盖当前库。</p>
+              <input type="file" class="file-upload-input" @change="handleImport" accept=".json">
+            </label>
+
+            <div class="admin-setting-card">
+              <span>最近数据操作</span>
+              <p class="settings-card-text">{{ lastDataAction }}</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="admin-mobile-panel danger-panel">
+          <div class="panel-heading">
+            <h3>演示环境</h3>
+            <p>仅在演示或重置环境时使用，操作前请再次确认。</p>
+          </div>
+
+          <div class="admin-form-stack">
+            <div class="admin-setting-card">
+              <span>环境说明</span>
+              <p class="settings-card-text">
+                当前版本只调整前后端 UI 表现，不新增后端逻辑。初始化会覆盖当前数据库中的商机记录并恢复演示样例。
+              </p>
+            </div>
+          </div>
+
+          <div class="stacked-actions">
+            <button class="btn-primary full-width danger-button" @click="handleResetDb">
+              初始化恢复演示数据
+            </button>
+          </div>
+        </section>
+      </div>
     </div>
   </section>
 </template>
@@ -218,8 +340,95 @@ export default {
   setup() {
     const router = useRouter()
     const store = useStore()
+    const activeTab = ref('wecom')
     const isSyncing = ref(false)
     const isPushing = ref(false)
+    const isSavingConfig = ref(false)
+    const isScanning = ref(false)
+
+    const reminderConfig = reactive({
+      'reminder.bid_deadline_days': '3',
+      'reminder.expected_delivery_days': '3',
+      'reminder.weekly_update_days': '7'
+    })
+
+    const reminderSwitches = reactive({
+      bid_deadline: true,
+      expected_delivery: true,
+      weekly_update: true,
+      auth_followup: true,
+      report_followup: true,
+      bid_result: true
+    })
+
+    const fetchReminderConfig = async () => {
+      try {
+        const response = await axios.get(`${API_BASE}/opportunities/reminders/config`, {
+          params: { userId: store.user.value?.userId, userName: store.user.value?.name }
+        })
+        const data = response.data
+        if (data) {
+          reminderConfig['reminder.bid_deadline_days'] = data['reminder.bid_deadline_days'] || '3'
+          reminderConfig['reminder.expected_delivery_days'] = data['reminder.expected_delivery_days'] || '3'
+          reminderConfig['reminder.weekly_update_days'] = data['reminder.weekly_update_days'] || '7'
+          reminderSwitches.bid_deadline = data['reminder.enable.bid_deadline'] !== 'false'
+          reminderSwitches.expected_delivery = data['reminder.enable.expected_delivery'] !== 'false'
+          reminderSwitches.weekly_update = data['reminder.enable.weekly_update'] !== 'false'
+          reminderSwitches.auth_followup = data['reminder.enable.auth_followup'] !== 'false'
+          reminderSwitches.report_followup = data['reminder.enable.report_followup'] !== 'false'
+          reminderSwitches.bid_result = data['reminder.enable.bid_result'] !== 'false'
+        }
+      } catch (e) {
+        console.error('获取提醒配置失败', e)
+      }
+    }
+
+    const saveReminderSettings = async () => {
+      isSavingConfig.value = true
+      try {
+        const payload = {
+          'reminder.bid_deadline_days': String(reminderConfig['reminder.bid_deadline_days']),
+          'reminder.expected_delivery_days': String(reminderConfig['reminder.expected_delivery_days']),
+          'reminder.weekly_update_days': String(reminderConfig['reminder.weekly_update_days']),
+          'reminder.enable.bid_deadline': String(reminderSwitches.bid_deadline),
+          'reminder.enable.expected_delivery': String(reminderSwitches.expected_delivery),
+          'reminder.enable.weekly_update': String(reminderSwitches.weekly_update),
+          'reminder.enable.auth_followup': String(reminderSwitches.auth_followup),
+          'reminder.enable.report_followup': String(reminderSwitches.report_followup),
+          'reminder.enable.bid_result': String(reminderSwitches.bid_result)
+        }
+        const response = await axios.post(`${API_BASE}/opportunities/reminders/config`, payload, {
+          params: { userId: store.user.value?.userId, userName: store.user.value?.name }
+        })
+        if (response.data.success) {
+          showToast(response.data.message, 'success')
+        } else {
+          showToast('保存提醒配置失败', 'error')
+        }
+      } catch (e) {
+        showToast('保存提醒配置异常', 'error')
+      } finally {
+        isSavingConfig.value = false
+      }
+    }
+
+    const triggerReminderScan = async () => {
+      isScanning.value = true
+      try {
+        const response = await axios.post(`${API_BASE}/opportunities/reminders/trigger-scan`, {}, {
+          params: { userId: store.user.value?.userId, userName: store.user.value?.name }
+        })
+        if (response.data.success) {
+          showToast(response.data.message, 'success')
+        } else {
+          showToast('触发提醒扫描失败', 'error')
+        }
+      } catch (e) {
+        showToast('执行扫描异常，请检查后端运行状态。', 'error')
+      } finally {
+        isScanning.value = false
+      }
+    }
     const syncSummary = ref(localStorage.getItem(SYNC_SUMMARY_KEY) || '暂无同步记录')
     const lastDataAction = ref(localStorage.getItem(DATA_ACTION_KEY) || '暂无数据操作记录')
     const testMsg = ref('提示：有一笔价值 280,000 元的“智能客服系统采购项目”商机状态已更新！')
@@ -478,7 +687,8 @@ export default {
       await Promise.all([
         store.fetchUsers(),
         store.fetchContacts(),
-        store.fetchMetrics()
+        store.fetchMetrics(),
+        fetchReminderConfig()
       ])
     })
 
@@ -503,8 +713,78 @@ export default {
       sendTestPush,
       handleExport,
       handleImport,
-      handleResetDb
+      handleResetDb,
+      reminderConfig,
+      reminderSwitches,
+      isSavingConfig,
+      isScanning,
+      saveReminderSettings,
+      triggerReminderScan,
+      activeTab
     }
   }
 }
 </script>
+
+<style scoped>
+.settings-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 8px;
+  overflow-x: auto;
+}
+
+.tab-btn {
+  background: none;
+  border: none;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.tab-btn:hover {
+  color: #3b82f6;
+  background-color: #f1f5f9;
+}
+
+.tab-btn.active {
+  color: #3b82f6;
+  background-color: #eff6ff;
+  box-shadow: inset 0 -2px 0 #3b82f6;
+}
+
+.settings-tab-content {
+  animation: fadeIn 0.25s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.settings-single-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+
+.settings-overview-grid.cols-3 {
+  margin-bottom: 20px;
+}
+
+@media (min-width: 768px) {
+  .settings-single-grid {
+    grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+  }
+  .settings-overview-grid.cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+</style>

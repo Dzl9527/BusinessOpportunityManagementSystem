@@ -293,7 +293,7 @@ export function useStore() {
       if (e.response?.status === 409) {
         showToast('商机报备流程未归档，请先完成OA归档', 'error')
       } else {
-        showToast('获取投标文件制作预填数据失败', 'error')
+        showToast('获取项目授权预填数据失败', 'error')
       }
       return null
     }

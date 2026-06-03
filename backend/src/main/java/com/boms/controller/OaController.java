@@ -85,7 +85,7 @@ public class OaController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "必须传入bidDocumentFlowNo");
         }
         return oppRepository.findByBidDocumentFlowNo(bidDocumentFlowNo)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "未找到投标文件制作流程"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "未找到项目授权流程"));
     }
 
     private void ensureOaDefaults(Opportunity opp) {
@@ -225,7 +225,7 @@ public class OaController {
         opp.setDeviceRequirementLockStatus("SOFT_LOCKED");
         opp.setDeviceRequirementLockedByFlowNo(bidDocumentFlowNo);
         opp.setDeviceRequirementLockedAt(Optional.ofNullable(getString(body, "startedAt")).orElse(now()));
-        addActivity(opp, "OA投标文件制作流程已发起，需求设备类型临时冻结，流程号：" + bidDocumentFlowNo);
+        addActivity(opp, "OA项目授权流程已发起，需求设备类型临时冻结，流程号：" + bidDocumentFlowNo);
         Opportunity saved = oppRepository.save(opp);
         auditService.recordChanges(saved, before, null, "OA", "SYSTEM");
         return saved;
@@ -242,7 +242,7 @@ public class OaController {
             opp.setDeviceRequirementLockStatus("HARD_LOCKED");
             opp.setDeviceRequirementLockedAtNode("06");
             opp.setDeviceRequirementLockedAt(Optional.ofNullable(getString(body, "arrivedAt")).orElse(now()));
-            addActivity(opp, "OA投标文件制作流程到达授权书创建审批06节点，需求设备类型已硬锁定。");
+            addActivity(opp, "OA项目授权流程到达授权书创建审批06节点，需求设备类型已硬锁定。");
         }
         Opportunity saved = oppRepository.save(opp);
         auditService.recordChanges(saved, before, null, "OA", "SYSTEM");
@@ -260,16 +260,16 @@ public class OaController {
             opp.setDeviceRequirementLockStatus("HARD_LOCKED");
             opp.setDeviceRequirementLockedAtNode("06");
             opp.setDeviceRequirementLockedAt(Optional.ofNullable(getString(body, "changedAt")).orElse(now()));
-            addActivity(opp, "OA投标文件制作流程到达授权书创建审批06节点，需求设备类型已硬锁定。");
+            addActivity(opp, "OA项目授权流程到达授权书创建审批06节点，需求设备类型已硬锁定。");
         } else if (("REJECTED".equalsIgnoreCase(status) || "CANCELED".equalsIgnoreCase(status))
                 && "SOFT_LOCKED".equalsIgnoreCase(opp.getDeviceRequirementLockStatus())) {
             opp.setDeviceRequirementLockStatus("UNLOCKED");
             opp.setDeviceRequirementLockedByFlowNo(null);
             opp.setDeviceRequirementLockedAtNode(null);
             opp.setDeviceRequirementLockedAt(null);
-            addActivity(opp, "OA投标文件制作流程" + status + "，已解除需求设备类型临时冻结。");
+            addActivity(opp, "OA项目授权流程" + status + "，已解除需求设备类型临时冻结。");
         } else {
-            addActivity(opp, "OA投标文件制作流程状态变更为：" + status);
+            addActivity(opp, "OA项目授权流程状态变更为：" + status);
         }
         Opportunity saved = oppRepository.save(opp);
         auditService.recordChanges(saved, before, null, "OA", "SYSTEM");

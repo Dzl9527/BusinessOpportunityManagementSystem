@@ -12,6 +12,7 @@ import com.boms.service.OpportunityAuditService;
 import com.boms.service.OpportunityPermissionService;
 import com.boms.service.UserDirectoryService;
 import com.boms.service.WeComService;
+import com.boms.service.OpportunityReminderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -43,6 +44,9 @@ public class OpportunityController {
 
     @Autowired
     private OpportunityAuditService auditService;
+
+    @Autowired
+    private OpportunityReminderService reminderService;
 
     private static final Map<String, String> STAGES = new LinkedHashMap<>() {{
         put("prospecting", "发现商机");
@@ -709,6 +713,53 @@ public class OpportunityController {
             return ResponseEntity.ok(reminder);
         }).orElse(ResponseEntity.notFound().build());
     }
+
+    @GetMapping("/reminders/config")
+    public ResponseEntity<Map<String, String>> getReminderConfig(@RequestParam(required = false) String userId,
+                                                                 @RequestParam(required = false) String userName) {
+        SystemUser currentUser = resolveCurrentUser(userId, userName);
+        if (currentUser == null || !(currentUser.isAdmin() || currentUser.getCanViewAll())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        return ResponseEntity.ok(reminderService.getReminderConfigs());
+    }
+
+    @PostMapping("/reminders/config")
+    public ResponseEntity<Map<String, Object>> saveReminderConfig(@RequestBody Map<String, String> configs,
+                                                                  @RequestParam(required = false) String userId,
+                                                                  @RequestParam(required = false) String userName) {
+        SystemUser currentUser = resolveCurrentUser(userId, userName);
+        if (currentUser == null || !(currentUser.isAdmin() || currentUser.getCanViewAll())) {
+            Map<String, Object> forbidden = new HashMap<>();
+            forbidden.put("success", false);
+            forbidden.put("message", "只有管理员才能修改提醒配置");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(forbidden);
+        }
+        reminderService.saveReminderConfigs(configs);
+        Map<String, Object> result = new HashMap<>();
+        result.put("success", true);
+        result.put("message", "提醒配置保存成功！");
+        return ResponseEntity.ok(result);
+    }
+
+    @PostMapping("/reminders/trigger-scan")
+    public ResponseEntity<Map<String, Object>> triggerReminderScan(@RequestParam(required = false) String userId,
+                                                                   @RequestParam(required = false) String userName) {
+        SystemUser currentUser = resolveCurrentUser(userId, userName);
+        if (currentUser == null || !(currentUser.isAdmin() || currentUser.getCanViewAll())) {
+            Map<String, Object> forbidden = new HashMap<>();
+            forbidden.put("success", false);
+            forbidden.put("message", "只有管理员才能手动触发提醒扫描");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(forbidden);
+        }
+        int sentCount = reminderService.runReminderScan();
+        Map<String, Object> result = new HashMap<>();
+        result.put("success", true);
+        result.put("message", String.format("提醒扫描执行完成，共发出 %d 条消息通知！", sentCount));
+        result.put("sentCount", sentCount);
+        return ResponseEntity.ok(result);
+    }
+
 
     @GetMapping("/metrics")
     public Map<String, Object> getMetrics(@RequestParam(required = false) String userId,

@@ -51,8 +51,8 @@ public class OpportunityAuditService {
         AUDITED_FIELDS.put("reportFlowNo", new FieldSnapshot("商机报备OA流程号", Opportunity::getReportFlowNo));
         AUDITED_FIELDS.put("reportFlowStatus", new FieldSnapshot("商机报备OA状态", Opportunity::getReportFlowStatus));
         AUDITED_FIELDS.put("reportArchivedAt", new FieldSnapshot("商机报备归档时间", Opportunity::getReportArchivedAt));
-        AUDITED_FIELDS.put("bidDocumentFlowNo", new FieldSnapshot("投标文件制作OA流程号", Opportunity::getBidDocumentFlowNo));
-        AUDITED_FIELDS.put("bidDocumentFlowStatus", new FieldSnapshot("投标文件制作OA状态", Opportunity::getBidDocumentFlowStatus));
+        AUDITED_FIELDS.put("bidDocumentFlowNo", new FieldSnapshot("项目授权OA流程号", Opportunity::getBidDocumentFlowNo));
+        AUDITED_FIELDS.put("bidDocumentFlowStatus", new FieldSnapshot("项目授权OA状态", Opportunity::getBidDocumentFlowStatus));
     }
 
     public Map<String, String> snapshot(Opportunity opp) {
