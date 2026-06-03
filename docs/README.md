@@ -24,8 +24,17 @@
 
 ## 当前文档
 
+- `docs/PRD.md`
+- `docs/business-process.md`
+- `docs/field-dictionary.md`
+- `docs/permission-rules.md`
+- `docs/status-flow.md`
+- `docs/oa-integration.md`
+- `docs/api-design.md`
+- `docs/acceptance-criteria.md`
 - `docs/product/商机管理系统-产品总览.md`
 - `docs/product/版本规划.md`
+- `docs/BOMS业务需求与核心流程说明书.md`
 - `docs/requirements/2026-05-24-设备事业群商机字段改造需求.md`
 - `docs/requirements/2026-05-24-用户端商机提报数据结构设计.md`
 - `docs/requirements/2026-05-25-OA商机报备与项目授权申请同步需求.md`
@@ -33,6 +42,8 @@
 - `docs/design/2026-05-24-设备事业群商机字段技术改造方案.md`
 - `docs/design/2026-05-24-企业微信权限与移动端商机工程实现方案.md`
 - `docs/design/2026-05-24-opportunity-field-migration.sql`
+- `docs/design/2026-05-26-OA商机报备与项目授权申请流程图.md`
+- `docs/design/2026-05-29-飞书日历查询脚本说明.md`
 - `docs/decisions/2026-05-24-本地文档库替代Notion.md`
 - `docs/changelog/需求变更记录.md`
 

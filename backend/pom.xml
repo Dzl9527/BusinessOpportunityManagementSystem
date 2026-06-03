@@ -11,7 +11,7 @@
     </parent>
     <groupId>com.boms</groupId>
     <artifactId>opportunity-management</artifactId>
-    <version>1.0.0</version>
+    <version>0.2.0</version>
     <name>opportunity-management</name>
     <description>Sales Opportunity Management System Backend with WeCom Integration</description>
 
