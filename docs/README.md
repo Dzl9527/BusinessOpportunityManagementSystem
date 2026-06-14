@@ -41,15 +41,15 @@
 *注意：为保持文档库纯粹，涉及数据库结构的 `.sql` 脚本已被迁移至项目根目录的部署资源文件夹中。*
 - [2026-05-24-opportunity-field-migration.sql](file:///C:/Users/Administrator/.gemini/antigravity/worktrees/BusinessOpportunityManagementSystem/verify-worktree-isolation-impact/deploy/sql/2026-05-24-opportunity-field-migration.sql)
 
-### 5. 新增标准模版与规范
-- `docs/PRD.md`
-- `docs/business-process.md`
-- `docs/field-dictionary.md`
-- `docs/permission-rules.md`
-- `docs/status-flow.md`
-- `docs/oa-integration.md`
-- `docs/api-design.md`
-- `docs/acceptance-criteria.md`
+### 5. 新增标准模版与规范 (归档至 `docs/templates/`)
+- `docs/templates/PRD.md`
+- `docs/templates/business-process.md`
+- `docs/templates/field-dictionary.md`
+- `docs/templates/permission-rules.md`
+- `docs/templates/status-flow.md`
+- `docs/templates/oa-integration.md`
+- `docs/templates/api-design.md`
+- `docs/templates/acceptance-criteria.md`
 
 ---
 
