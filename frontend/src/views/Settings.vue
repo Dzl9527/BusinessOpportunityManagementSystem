@@ -1,17 +1,6 @@
 <template>
   <section class="content-panel active admin-tools-page settings-page">
-    <div class="admin-mobile-header">
-      <div>
-        <h2>系统设置</h2>
-        <p>管理员在这里维护企业微信联调、账号权限、通知偏好和数据管理。</p>
-      </div>
-      <button class="btn-secondary settings-header-btn" type="button" @click="goUsers">
-        打开用户管理
-      </button>
-    </div>
-
-
-    <nav class="settings-tabs">
+    <nav class="settings-tabs" style="margin-top: 16px;">
       <button 
         type="button" 
         class="tab-btn" 

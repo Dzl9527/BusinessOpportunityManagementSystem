@@ -11,6 +11,7 @@ export const useOppStore = defineStore('opportunity', () => {
   const page = ref(0)
   const size = ref(20)
   const totalElements = ref(0)
+  const totalPages = ref(0)
   const opportunityOptions = ref<any>({
     stages: {},
     industries: [],
@@ -39,6 +40,7 @@ export const useOppStore = defineStore('opportunity', () => {
       })
       opportunities.value = response.data.content
       totalElements.value = response.data.totalElements
+      totalPages.value = response.data.totalPages
       page.value = response.data.pageable?.pageNumber || p
       size.value = response.data.pageable?.pageSize || s
     } catch (e) {
@@ -57,11 +59,17 @@ export const useOppStore = defineStore('opportunity', () => {
     window.open(`${API_BASE}/opportunities/export-excel?${qs.toString()}`, '_blank')
   }
 
-  const fetchMyOpportunities = async (filters: any = {}) => {
+  const fetchMyOpportunities = async (filters: any = {}, p = page.value, s = size.value) => {
     const appStore = useAppStore()
     try {
-      const response = await axios.get(`${API_BASE}/opportunities/mine`, { params: { ...filters } })
-      opportunities.value = response.data
+      const response = await axios.get(`${API_BASE}/opportunities/mine/page`, { 
+        params: { ...filters, page: p, size: s } 
+      })
+      opportunities.value = response.data.content
+      totalElements.value = response.data.totalElements
+      totalPages.value = response.data.totalPages
+      page.value = response.data.pageable?.pageNumber || p
+      size.value = response.data.pageable?.pageSize || s
     } catch (e) {
       console.error('Failed to fetch my opportunities', e)
       appStore.showToast('获取我的商机失败', 'error')
@@ -249,6 +257,7 @@ export const useOppStore = defineStore('opportunity', () => {
     page,
     size,
     totalElements,
+    totalPages,
     opportunityOptions,
     fetchOpportunities,
     exportOpportunities,

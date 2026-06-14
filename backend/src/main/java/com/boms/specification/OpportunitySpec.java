@@ -49,6 +49,23 @@ public class OpportunitySpec {
                 predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("closeDate"), closeDateEnd.trim()));
             }
 
+            String startDate = params.get("startDate");
+            String endDate = params.get("endDate");
+            if (startDate != null && !startDate.trim().isEmpty()) {
+                predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("submitDate"), startDate.trim()));
+            }
+            if (endDate != null && !endDate.trim().isEmpty()) {
+                predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("submitDate"), endDate.trim()));
+            }
+
+            String ownerOrSubmitter = params.get("ownerOrSubmitter");
+            if (ownerOrSubmitter != null && !ownerOrSubmitter.trim().isEmpty()) {
+                String p = "%" + ownerOrSubmitter.trim().toLowerCase() + "%";
+                Predicate mo = criteriaBuilder.like(criteriaBuilder.lower(root.get("owner")), p);
+                Predicate ms = criteriaBuilder.like(criteriaBuilder.lower(root.get("submitter")), p);
+                predicates.add(criteriaBuilder.or(mo, ms));
+            }
+
             // 3. Boolean match fields
             addBooleanMatch(predicates, criteriaBuilder, root, "bidWon", params.get("bidWon"));
             addBooleanMatch(predicates, criteriaBuilder, root, "reportedSuccessfully", params.get("reportedSuccessfully"));

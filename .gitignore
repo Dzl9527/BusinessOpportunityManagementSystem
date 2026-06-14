@@ -17,11 +17,13 @@ frontend/*.log
 outputs/
 scratch/*
 !scratch/.gitkeep
+/test_api.js
 
 # Frontend
 frontend/node_modules/
 frontend/dist/
 frontend/.vite/
+deploy/*.zip
 
 # Backend
 backend/target/

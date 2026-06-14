@@ -1,10 +1,6 @@
 <template>
   <section class="content-panel users-panel">
-    <div class="admin-mobile-header">
-      <div>
-        <h2>用户管理</h2>
-        <p>维护企业微信用户、角色和白名单范围</p>
-      </div>
+    <div style="display: flex; justify-content: flex-end; margin-bottom: 16px;">
       <button class="btn-primary" @click="syncUsers">同步企业微信用户</button>
     </div>
 

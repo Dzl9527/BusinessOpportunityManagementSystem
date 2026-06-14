@@ -93,6 +93,6 @@ cd D:\antigravityproject\BusinessOpportunityManagementSystem
 - 新功能分支：`feature/功能名称`
 - 修复分支：`fix/问题名称`
 
-版本计划查看：`docs/product/版本规划.md`
+版本计划查看：`docs/core/版本规划.md`
 
 发布记录查看：`CHANGELOG.md`

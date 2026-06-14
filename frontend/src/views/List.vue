@@ -12,10 +12,14 @@
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
             </svg>
-            <span>折叠筛选</span>
+            <span>{{ filtersExpanded ? '收起筛选' : '高级筛选' }}</span>
             <span v-if="activeFilterCount" class="filter-count-badge">{{ activeFilterCount }}</span>
           </button>
-          <button v-if="activeFilterCount" class="btn-secondary mobile-reset-btn" type="button" @click="resetFilters">
+          <button class="btn-primary" type="button" @click="handleExport" style="margin-left: 8px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+            <span>导出</span>
+          </button>
+          <button v-if="activeFilterCount" class="btn-secondary mobile-reset-btn" type="button" @click="resetFilters" style="margin-left: 8px;">
             重置
           </button>
         </div>
@@ -48,6 +52,34 @@
                 <option value="all">所有业务进度</option>
                 <option v-for="item in optionList('businessProgressStatuses')" :key="item" :value="item">{{ item }}</option>
               </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">创建时间 (起)</label>
+              <input type="date" class="form-control" v-model="filters.startDate">
+            </div>
+            <div class="form-group">
+              <label class="form-label">创建时间 (止)</label>
+              <input type="date" class="form-control" v-model="filters.endDate">
+            </div>
+            <div class="form-group">
+              <label class="form-label">商机阶段</label>
+              <select class="form-control" v-model="filters.stage">
+                <option value="all">所有阶段</option>
+                <option v-for="(lbl, key) in STAGES" :key="key" :value="key">{{ lbl }}</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">优先级</label>
+              <select class="form-control" v-model="filters.priority">
+                <option value="all">所有优先级</option>
+                <option value="high">高</option>
+                <option value="medium">中</option>
+                <option value="low">低</option>
+              </select>
+            </div>
+            <div class="form-group" style="grid-column: 1 / -1;">
+              <label class="form-label">提报人/负责人</label>
+              <input type="text" class="form-control" v-model="filters.ownerOrSubmitter" placeholder="输入姓名进行模糊搜索...">
             </div>
           </div>
 
@@ -118,6 +150,17 @@
             </tr>
           </tbody>
         </table>
+      </div>
+    </div>
+
+    <div class="pagination-wrapper" style="display: flex; justify-content: flex-end; align-items: center; padding: 16px; gap: 16px;">
+      <span style="color: var(--text-muted); font-size: 14px;">共 {{ oppStore.totalElements }} 条数据</span>
+      <div style="display: flex; gap: 8px;">
+        <button class="btn-secondary" :disabled="oppStore.page === 0" @click="prevPage">上一页</button>
+        <span style="display: inline-flex; align-items: center; font-weight: 500;">
+          {{ oppStore.page + 1 }} / {{ Math.max(1, oppStore.totalPages) }}
+        </span>
+        <button class="btn-secondary" :disabled="oppStore.page >= oppStore.totalPages - 1" @click="nextPage">下一页</button>
       </div>
     </div>
 
@@ -342,10 +385,15 @@ const readUiPrefs = () => {
       search: '',
       industry: 'all',
       supplyRegion: 'all',
-      businessProgressStatus: 'all'
+      businessProgressStatus: 'all',
+      startDate: '',
+      endDate: '',
+      stage: 'all',
+      priority: 'all',
+      ownerOrSubmitter: ''
     })
 
-    const filtersExpanded = ref(readUiPrefs().keepFilterCollapsed === false)
+    const filtersExpanded = ref(true)
     const modalVisible = ref(false)
     const isEdit = ref(false)
     const form = ref({})
@@ -363,6 +411,11 @@ const readUiPrefs = () => {
       if (filters.industry !== 'all') labels.push(`行业：${filters.industry}`)
       if (filters.supplyRegion !== 'all') labels.push(`供货省区：${filters.supplyRegion}`)
       if (filters.businessProgressStatus !== 'all') labels.push(`业务进度：${filters.businessProgressStatus}`)
+      if (filters.startDate) labels.push(`开始时间：${filters.startDate}`)
+      if (filters.endDate) labels.push(`结束时间：${filters.endDate}`)
+      if (filters.stage !== 'all') labels.push(`阶段：${STAGES[filters.stage] || filters.stage}`)
+      if (filters.priority !== 'all') labels.push(`优先级：${filters.priority === 'high' ? '高' : filters.priority === 'medium' ? '中' : '低'}`)
+      if (filters.ownerOrSubmitter) labels.push(`人员：${filters.ownerOrSubmitter}`)
       return labels
     })
 
@@ -453,6 +506,11 @@ const readUiPrefs = () => {
       filters.industry = 'all'
       filters.supplyRegion = 'all'
       filters.businessProgressStatus = 'all'
+      filters.startDate = ''
+      filters.endDate = ''
+      filters.stage = 'all'
+      filters.priority = 'all'
+      filters.ownerOrSubmitter = ''
     }
 
     const toggleAdvancedFilters = () => {
@@ -536,7 +594,22 @@ const readUiPrefs = () => {
       await oppStore.fetchOpportunities(filters)
     }
 
-    watch(filters, (newFilters) => oppStore.fetchOpportunities(newFilters), { deep: true })
+    const prevPage = () => {
+      if (oppStore.page > 0) {
+        oppStore.fetchOpportunities(filters, oppStore.page - 1)
+      }
+    }
+
+    const nextPage = () => {
+      if (oppStore.page < oppStore.totalPages - 1) {
+        oppStore.fetchOpportunities(filters, oppStore.page + 1)
+      }
+    }
+
+    watch(filters, (newFilters) => {
+      // Reset page to 0 when filters change
+      oppStore.fetchOpportunities(newFilters, 0)
+    }, { deep: true })
 
     onMounted(async () => {
       await oppStore.fetchOpportunityOptions()
@@ -549,7 +622,52 @@ const readUiPrefs = () => {
       window.removeEventListener('open-new-opp-modal', initNewOpp)
     })
 
+    const handleExport = async () => {
+      try {
+        // Build query string
+        const query = new URLSearchParams()
+        if (filters.search) query.append('search', filters.search)
+        if (filters.industry !== 'all') query.append('industry', filters.industry)
+        if (filters.supplyRegion !== 'all') query.append('supplyRegion', filters.supplyRegion)
+        if (filters.businessProgressStatus !== 'all') query.append('businessProgressStatus', filters.businessProgressStatus)
+        if (filters.startDate) query.append('startDate', filters.startDate)
+        if (filters.endDate) query.append('endDate', filters.endDate)
+        if (filters.stage !== 'all') query.append('stage', filters.stage)
+        if (filters.priority !== 'all') query.append('priority', filters.priority)
+        if (filters.ownerOrSubmitter) query.append('ownerOrSubmitter', filters.ownerOrSubmitter)
+
+        // Add authorization header
+        const token = authStore.user?.token
+        if (!token) {
+          throw new Error('当前登录状态已失效，请重新登录')
+        }
+        const response = await fetch(`/api/opportunities/export-excel?${query.toString()}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+
+        if (!response.ok) {
+          throw new Error('导出失败')
+        }
+
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `商机导出_${new Date().getTime()}.xlsx`
+        document.body.appendChild(a)
+        a.click()
+        a.remove()
+        window.URL.revokeObjectURL(url)
+      } catch (err) {
+        alert('导出失败: ' + err.message)
+      }
+    }
+
     return {
+      oppStore,
       STAGES,
       opportunities: oppStore.opportunities,
       filters,
@@ -574,6 +692,7 @@ const readUiPrefs = () => {
       resetFilters,
       toggleAdvancedFilters,
       openEditOpp,
+      handleExport,
       handleSubmit,
       handleDelete,
       openDetail,
@@ -581,7 +700,9 @@ const readUiPrefs = () => {
       onOppUpdated,
       nextStep,
       prevStep,
-      addLocalAttachment
+      addLocalAttachment,
+      prevPage,
+      nextPage
     }
   }
 }

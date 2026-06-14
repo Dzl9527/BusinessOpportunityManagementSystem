@@ -482,37 +482,47 @@ public class OpportunityController {
         Set<String> visibleUserIds = permissionService.getVisibleUserIds(currentUser);
         
         Specification<Opportunity> spec = OpportunitySpec.filterBy(params, isAdmin, visibleUserIds);
-        List<Opportunity> list = oppRepository.findAll(spec, Sort.by(Sort.Direction.DESC, "id"));
-        
-        List<OpportunityExportDTO> exportList = list.stream().map(opp -> {
-            OpportunityExportDTO dto = new OpportunityExportDTO();
-            dto.setName(opp.getName());
-            dto.setCompany(opp.getCompany());
-            dto.setStage(STAGES.getOrDefault(opp.getStage(), opp.getStage()));
-            dto.setValue(opp.getValue());
-            dto.setProbability(opp.getProbability());
-            dto.setCloseDate(opp.getCloseDate());
-            dto.setOwner(opp.getOwner());
-            dto.setPriority(opp.getPriority());
-            dto.setSource(opp.getSource());
-            dto.setContactName(opp.getContactName());
-            dto.setContactPhone(opp.getContactPhone());
-            dto.setIndustry(opp.getIndustry());
-            dto.setSubmitter(opp.getSubmitter());
-            dto.setSubmitDate(opp.getSubmitDate());
-            dto.setSupplyRegion(opp.getSupplyRegion());
-            dto.setBusinessProgressStatus(opp.getBusinessProgressStatus());
-            dto.setBidWonStr(opp.getBidWon() != null ? (opp.getBidWon() ? "是" : "否") : "未知");
-            dto.setDescription(opp.getDescription());
-            return dto;
-        }).collect(Collectors.toList());
-
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         response.setCharacterEncoding("utf-8");
         String fileName = java.net.URLEncoder.encode("商机明细导出", "UTF-8").replaceAll("\\+", "%20");
         response.setHeader("Content-disposition", "attachment;filename*=utf-8''" + fileName + ".xlsx");
         
-        EasyExcel.write(response.getOutputStream(), OpportunityExportDTO.class).sheet("商机明细").doWrite(exportList);
+        try (com.alibaba.excel.ExcelWriter excelWriter = EasyExcel.write(response.getOutputStream(), OpportunityExportDTO.class).build()) {
+            com.alibaba.excel.write.metadata.WriteSheet writeSheet = EasyExcel.writerSheet("商机明细").build();
+            int page = 0;
+            int size = 1000;
+            org.springframework.data.domain.Page<Opportunity> pageResult;
+            do {
+                org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size, org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "id"));
+                pageResult = oppRepository.findAll(spec, pageable);
+                
+                List<OpportunityExportDTO> exportList = pageResult.getContent().stream().map(opp -> {
+                    OpportunityExportDTO dto = new OpportunityExportDTO();
+                    dto.setName(opp.getName());
+                    dto.setCompany(opp.getCompany());
+                    dto.setStage(STAGES.getOrDefault(opp.getStage(), opp.getStage()));
+                    dto.setValue(opp.getValue());
+                    dto.setProbability(opp.getProbability());
+                    dto.setCloseDate(opp.getCloseDate());
+                    dto.setOwner(opp.getOwner());
+                    dto.setPriority(opp.getPriority());
+                    dto.setSource(opp.getSource());
+                    dto.setContactName(opp.getContactName());
+                    dto.setContactPhone(opp.getContactPhone());
+                    dto.setIndustry(opp.getIndustry());
+                    dto.setSubmitter(opp.getSubmitter());
+                    dto.setSubmitDate(opp.getSubmitDate());
+                    dto.setSupplyRegion(opp.getSupplyRegion());
+                    dto.setBusinessProgressStatus(opp.getBusinessProgressStatus());
+                    dto.setBidWonStr(opp.getBidWon() != null ? (opp.getBidWon() ? "是" : "否") : "未知");
+                    dto.setDescription(opp.getDescription());
+                    return dto;
+                }).collect(Collectors.toList());
+                
+                excelWriter.write(exportList, writeSheet);
+                page++;
+            } while (pageResult.hasNext());
+        }
     }
 
     @GetMapping("/{id}")
@@ -663,6 +673,22 @@ public class OpportunityController {
         result.put("duplicate", !matches.isEmpty());
         result.put("matches", matches);
         return result;
+    }
+
+    @GetMapping("/mine/page")
+    public Page<Opportunity> getMinePage(
+            @RequestParam Map<String, String> params,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String userId,
+            @RequestParam(required = false) String userName) {
+        SystemUser currentUser = resolveCurrentUser(userId, userName);
+        boolean isAdmin = currentUser.isAdmin();
+        Set<String> visibleUserIds = permissionService.getVisibleUserIds(currentUser);
+        params.put("activeOnly", "true");
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
+        Specification<Opportunity> spec = OpportunitySpec.filterBy(params, isAdmin, visibleUserIds);
+        return oppRepository.findAll(spec, pageable);
     }
 
     @GetMapping("/mine")

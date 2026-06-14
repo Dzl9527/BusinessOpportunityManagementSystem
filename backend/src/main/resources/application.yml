@@ -6,10 +6,6 @@ spring:
     name: opportunity-management
   cache:
     type: simple
-
-jwt:
-  secret: default_secret_change_me_in_prod_!@#123
-  expiration-ms: 86400000 # 24 hours
   datasource:
     url: jdbc:h2:mem:bomsdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
     driver-class-name: org.h2.Driver
@@ -26,6 +22,10 @@ jwt:
     hibernate:
       ddl-auto: update
     show-sql: true
+
+jwt:
+  secret: default_secret_change_me_in_prod_!@#123
+  expiration-ms: 86400000 # 24 hours
 
 # Enterprise WeChat (WeCom) Integration Settings
 wecom:
