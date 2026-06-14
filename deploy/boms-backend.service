@@ -1,0 +1,14 @@
+[Unit]
+Description=BOMS Backend Service (商机管理系统后端)
+After=syslog.target network.target
+
+[Service]
+User=root # TODO: 如果有安全要求，建议替换为低权限账号（如 www-data）
+WorkingDirectory=/var/www/boms
+ExecStart=/usr/bin/java -jar /var/www/boms/opportunity-management-1.0.0.jar --spring.profiles.active=prod
+SuccessExitStatus=143
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

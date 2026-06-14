@@ -103,14 +103,22 @@
 
 <script>
 import { computed, onMounted, ref } from 'vue'
-import { useStore } from '../store'
+import { useAuthStore } from '../stores/useAuthStore'
+import { useOppStore } from '../stores/useOppStore'
+import { useAppStore } from '../stores/useAppStore'
+import { useUserStore } from '../stores/useUserStore'
+import { useMetricsStore } from '../stores/useMetricsStore'
 
 export default {
   setup() {
-    const store = useStore()
-    const selectedUser = ref(null)
+        const authStore = useAuthStore()
+    const oppStore = useOppStore()
+    const appStore = useAppStore()
+    const userStore = useUserStore()
+    const metricsStore = useMetricsStore()
+const selectedUser = ref(null)
     const visibleUserIds = ref([])
-    const users = computed(() => store.users.value)
+    const users = computed(() => userStore.users)
     const selectableUsers = computed(() => users.value.filter(item => item.wecomUserId !== selectedUser.value?.wecomUserId))
 
     const roleText = (role) => {
@@ -120,20 +128,20 @@ export default {
     }
 
     const syncUsers = async () => {
-      await store.syncWeComUsers()
+      await userStore.syncWeComUsers()
     }
 
     const changeRole = async (user, role) => {
-      await store.updateUserRole(user.wecomUserId, { role, canViewAll: role === 'ADMIN' })
-      const latest = store.users.value.find(item => item.wecomUserId === user.wecomUserId)
+      await userStore.updateUserRole(user.wecomUserId, { role, canViewAll: role === 'ADMIN' })
+      const latest = userStore.users.find(item => item.wecomUserId === user.wecomUserId)
       if (latest) {
         selectedUser.value = latest
       }
     }
 
     const toggleEnabled = async (user) => {
-      await store.updateUserEnabled(user.wecomUserId, !user.enabled)
-      const latest = store.users.value.find(item => item.wecomUserId === user.wecomUserId)
+      await userStore.updateUserEnabled(user.wecomUserId, !user.enabled)
+      const latest = userStore.users.find(item => item.wecomUserId === user.wecomUserId)
       if (latest) {
         selectedUser.value = latest
       }
@@ -141,17 +149,17 @@ export default {
 
     const selectUser = async (user) => {
       selectedUser.value = user
-      const rules = await store.fetchVisibilityRules(user.wecomUserId)
+      const rules = await userStore.fetchVisibilityRules(user.wecomUserId)
       visibleUserIds.value = rules.map(rule => rule.visibleUserId)
     }
 
     const saveRules = async () => {
       if (!selectedUser.value) return
-      await store.saveVisibilityRules(selectedUser.value.wecomUserId, visibleUserIds.value)
+      await userStore.saveVisibilityRules(selectedUser.value.wecomUserId, visibleUserIds.value)
     }
 
     onMounted(async () => {
-      await store.fetchUsers()
+      await userStore.fetchUsers()
     })
 
     return {

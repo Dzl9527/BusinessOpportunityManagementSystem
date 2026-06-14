@@ -240,7 +240,11 @@
 <script>
 import { ref, watch } from 'vue'
 import axios from 'axios'
-import { API_BASE, useStore } from '../store'
+import { useAuthStore } from '../stores/useAuthStore'
+import { useOppStore } from '../stores/useOppStore'
+import { useAppStore } from '../stores/useAppStore'
+import { useUserStore } from '../stores/useUserStore'
+import { useMetricsStore } from '../stores/useMetricsStore'
 
 export default {
   props: {
@@ -255,8 +259,12 @@ export default {
   },
   emits: ['close', 'updated'],
   setup(props, { emit }) {
-    const store = useStore()
-    const opp = ref(null)
+        const authStore = useAuthStore()
+    const oppStore = useOppStore()
+    const appStore = useAppStore()
+    const userStore = useUserStore()
+    const metricsStore = useMetricsStore()
+const opp = ref(null)
     const activeTab = ref('summary')
     const changeLogs = ref([])
 
@@ -294,10 +302,10 @@ export default {
       if (!oppId) return
       try {
         const response = await axios.get(`${API_BASE}/opportunities/${oppId}`, {
-          params: { userId: store.user.value?.userId, userName: store.user.value?.name }
+          params: { userId: authStore.user?.userId, userName: authStore.user?.name }
         })
         opp.value = response.data
-        changeLogs.value = await store.fetchOpportunityChangeLogs(oppId)
+        changeLogs.value = await oppStore.fetchOpportunityChangeLogs(oppId)
       } catch (err) {
         console.error("Failed to load opportunity drawer details", err)
       }
@@ -358,7 +366,7 @@ export default {
       const text = newTaskText.value.trim()
       if (!text || !opp.value) return
 
-      const added = await store.addTask(opp.value.id, text)
+      const added = await oppStore.addTask(opp.value.id, text)
       if (added) {
         newTaskText.value = ''
         await fetchDetail(opp.value.id)
@@ -368,7 +376,7 @@ export default {
 
     const handleToggleTask = async (task) => {
       if (!opp.value) return
-      const updated = await store.toggleTask(opp.value.id, task.id)
+      const updated = await oppStore.toggleTask(opp.value.id, task.id)
       if (updated) {
         await fetchDetail(opp.value.id)
         emit('updated')
@@ -379,7 +387,7 @@ export default {
       const content = newActivityContent.value.trim()
       if (!content || !opp.value) return
 
-      const added = await store.addActivity(opp.value.id, activeActivityType.value, content)
+      const added = await oppStore.addActivity(opp.value.id, activeActivityType.value, content)
       if (added) {
         newActivityContent.value = ''
         await fetchDetail(opp.value.id)
@@ -389,7 +397,7 @@ export default {
 
     const handleStartReportFlow = async () => {
       if (!opp.value) return
-      const updated = await store.startOaReportFlow(opp.value.id)
+      const updated = await oppStore.startOaReportFlow(opp.value.id)
       if (updated) {
         await fetchDetail(opp.value.id)
         emit('updated')

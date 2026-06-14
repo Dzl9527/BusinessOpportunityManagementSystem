@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { useStore } from '../store'
+import { useAuthStore } from '../stores/useAuthStore'
 
 const routes = [
   {
@@ -58,7 +58,7 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
-  const store = useStore()
+  const authStore = useAuthStore()
   
   // Set window title
   if (to.meta && to.meta.title) {
@@ -67,16 +67,16 @@ router.beforeEach((to, from, next) => {
 
   // Auth Guard
   if (to.matched.some(record => record.meta.requiresAuth)) {
-    if (!store.user.value) {
+    if (!authStore.user) {
       next({ name: 'Login' })
-    } else if (to.meta.requiresAdmin && !(store.user.value.role === 'ADMIN' || store.user.value.canViewAll)) {
+    } else if (to.meta.requiresAdmin && !(authStore.user.role === 'ADMIN' || authStore.user.canViewAll)) {
       next({ name: 'Dashboard' })
     } else {
       next()
     }
   } else {
     // Redirect logged in user from login to dashboard
-    if (to.name === 'Login' && store.user.value) {
+    if (to.name === 'Login' && authStore.user) {
       next({ name: 'Dashboard' })
     } else {
       next()

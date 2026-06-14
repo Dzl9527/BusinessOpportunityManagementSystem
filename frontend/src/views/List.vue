@@ -242,7 +242,11 @@
 
 <script>
 import { computed, defineComponent, h, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
-import { useStore } from '../store'
+import { useAuthStore } from '../stores/useAuthStore'
+import { useOppStore } from '../stores/useOppStore'
+import { useAppStore } from '../stores/useAppStore'
+import { useUserStore } from '../stores/useUserStore'
+import { useMetricsStore } from '../stores/useMetricsStore'
 import OpportunityDrawer from '../components/OpportunityDrawer.vue'
 
 const Field = defineComponent({
@@ -313,8 +317,12 @@ const MultiSelect = defineComponent({
 export default {
   components: { OpportunityDrawer, Field, SelectInput, BooleanSelect, MultiSelect },
   setup() {
-    const store = useStore()
-    const readUiPrefs = () => {
+        const authStore = useAuthStore()
+    const oppStore = useOppStore()
+    const appStore = useAppStore()
+    const userStore = useUserStore()
+    const metricsStore = useMetricsStore()
+const readUiPrefs = () => {
       try {
         return JSON.parse(localStorage.getItem('crm_admin_ui_prefs') || '{}')
       } catch (e) {
@@ -348,7 +356,7 @@ export default {
     const attachmentDraft = reactive({ fileName: '', fileType: 'other' })
     const formSteps = ['基础信息', '设备需求', '授权报备', '投标交付', '组织归属', '进展附件']
 
-    const optionList = (key) => store.opportunityOptions.value?.[key] || []
+    const optionList = (key) => oppStore.opportunityOptions?.[key] || []
 
     const activeFilterLabels = computed(() => {
       const labels = []
@@ -372,7 +380,7 @@ export default {
     }
 
     const canOverrideLockedDeviceType = computed(() => {
-      return store.user.value?.role === 'ADMIN' || store.user.value?.canViewAll
+      return authStore.user?.role === 'ADMIN' || authStore.user?.canViewAll
     })
 
     const isDeviceTypeInputDisabled = (opp) => {
@@ -403,16 +411,16 @@ export default {
       company: '',
       stage: 'prospecting',
       priority: 'medium',
-      owner: store.user.value?.name || '张经理',
-      submitter: store.user.value?.name || '张经理',
-      creator: store.user.value?.name || '张经理',
+      owner: authStore.user?.name || '张经理',
+      submitter: authStore.user?.name || '张经理',
+      creator: authStore.user?.name || '张经理',
       industry: '',
       supplierCompany: '',
       govMarketManager: '',
       submitterRegion: '',
       supplyRegion: '',
       salesDepartment: '设备省公司',
-      sales: store.user.value?.name || '张经理',
+      sales: authStore.user?.name || '张经理',
       deviceTypes: '',
       deviceModels: '',
       demandQuantity: null,
@@ -460,7 +468,7 @@ export default {
     }
 
     const openEditOpp = (oppId) => {
-      const opp = store.opportunities.value.find(o => o.id === oppId)
+      const opp = oppStore.opportunities.find(o => o.id === oppId)
       if (opp) {
         isEdit.value = true
         form.value = { ...newForm(), ...opp, attachments: [...(opp.attachments || [])] }
@@ -472,7 +480,7 @@ export default {
 
     const nextStep = async () => {
       if (activeStep.value === 0 || activeStep.value === 1) {
-        const result = await store.checkDuplicates(form.value)
+        const result = await oppStore.checkDuplicates(form.value)
         duplicateMatches.value = result.matches || []
       }
       if (activeStep.value < formSteps.length - 1) activeStep.value += 1
@@ -498,19 +506,19 @@ export default {
       const attachments = [...(payload.attachments || [])]
       delete payload.attachments
       if (isEdit.value) {
-        await store.updateOpp(payload.id, payload)
+        await oppStore.updateOpp(payload.id, payload)
         for (const file of attachments.filter(a => !a.id)) {
-          await store.addAttachment(payload.id, file)
+          await oppStore.addAttachment(payload.id, file)
         }
       } else {
-        await store.submitOpportunity({ ...payload, attachments })
+        await oppStore.submitOpportunity({ ...payload, attachments })
       }
       modalVisible.value = false
     }
 
     const handleDelete = async (opp) => {
       if (confirm(`确定要删除该商机提报 [${opp.name}] 吗？`)) {
-        await store.deleteOpp(opp.id)
+        await oppStore.deleteOpp(opp.id)
       }
     }
 
@@ -525,15 +533,15 @@ export default {
     }
 
     const onOppUpdated = async () => {
-      await store.fetchOpportunities(filters)
+      await oppStore.fetchOpportunities(filters)
     }
 
-    watch(filters, (newFilters) => store.fetchOpportunities(newFilters), { deep: true })
+    watch(filters, (newFilters) => oppStore.fetchOpportunities(newFilters), { deep: true })
 
     onMounted(async () => {
-      await store.fetchOpportunityOptions()
-      await store.fetchOpportunities(filters)
-      await store.fetchContacts()
+      await oppStore.fetchOpportunityOptions()
+      await oppStore.fetchOpportunities(filters)
+      await userStore.fetchContacts()
       window.addEventListener('open-new-opp-modal', initNewOpp)
     })
 
@@ -543,7 +551,7 @@ export default {
 
     return {
       STAGES,
-      opportunities: store.opportunities,
+      opportunities: oppStore.opportunities,
       filters,
       filtersExpanded,
       activeFilterCount,

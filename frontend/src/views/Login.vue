@@ -64,14 +64,22 @@
 <script>
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { useStore } from '../store'
+import { useAuthStore } from '../stores/useAuthStore'
+import { useOppStore } from '../stores/useOppStore'
+import { useAppStore } from '../stores/useAppStore'
+import { useUserStore } from '../stores/useUserStore'
+import { useMetricsStore } from '../stores/useMetricsStore'
 
 export default {
   setup() {
     const router = useRouter()
     const route = useRoute()
-    const store = useStore()
-    const isAuthenticating = ref(false)
+        const authStore = useAuthStore()
+    const oppStore = useOppStore()
+    const appStore = useAppStore()
+    const userStore = useUserStore()
+    const metricsStore = useMetricsStore()
+const isAuthenticating = ref(false)
     const sandboxAccounts = [
       { userId: 'zhang_jingli', name: '张经理', role: '管理员' },
       { userId: 'li_zhuguan', name: '李主管', role: '领导/白名单' },
@@ -79,7 +87,7 @@ export default {
     ]
 
     const handleSandboxLogin = async (userId = 'zhang_jingli') => {
-      await store.loginSandbox(userId)
+      await authStore.loginSandbox(userId)
       router.push({ name: 'Dashboard' })
     }
 
@@ -88,7 +96,7 @@ export default {
       const code = route.query.code
       if (code) {
         isAuthenticating.value = true
-        const success = await store.loginWithCode(code)
+        const success = await authStore.loginWithCode(code)
         isAuthenticating.value = false
         if (success) {
           router.push({ name: 'Dashboard' })

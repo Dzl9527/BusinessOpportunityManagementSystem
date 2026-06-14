@@ -30,7 +30,8 @@ public class UserController {
     }
 
     private String getAdminUserId(String adminUserId) {
-        return adminUserId == null || adminUserId.trim().isEmpty() ? "anonymous" : adminUserId.trim();
+        String securityId = com.boms.security.SecurityUtils.getCurrentUserId();
+        return securityId != null ? securityId : "anonymous";
     }
 
     private String getAdminName(String adminName) {
@@ -54,7 +55,9 @@ public class UserController {
     @GetMapping("/me")
     public SystemUser me(@RequestParam(required = false) String userId,
                          @RequestParam(required = false) String userName) {
-        return userDirectoryService.getCurrentUser(userId, userName);
+        String securityId = com.boms.security.SecurityUtils.getCurrentUserId();
+        if (securityId == null) { securityId = userId; }
+        return userDirectoryService.getCurrentUser(securityId, userName);
     }
 
     @PostMapping("/sync-wecom")

@@ -322,7 +322,11 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
-import { API_BASE, useStore, showToast } from '../store'
+import { useAuthStore } from '../stores/useAuthStore'
+import { useOppStore } from '../stores/useOppStore'
+import { useAppStore } from '../stores/useAppStore'
+import { useUserStore } from '../stores/useUserStore'
+import { useMetricsStore } from '../stores/useMetricsStore'
 
 const UI_PREFS_KEY = 'crm_admin_ui_prefs'
 const SYNC_SUMMARY_KEY = 'crm_settings_last_sync'
@@ -339,8 +343,12 @@ const formatNow = () => new Date().toLocaleString('zh-CN', { hour12: false })
 export default {
   setup() {
     const router = useRouter()
-    const store = useStore()
-    const activeTab = ref('wecom')
+        const authStore = useAuthStore()
+    const oppStore = useOppStore()
+    const appStore = useAppStore()
+    const userStore = useUserStore()
+    const metricsStore = useMetricsStore()
+const activeTab = ref('wecom')
     const isSyncing = ref(false)
     const isPushing = ref(false)
     const isSavingConfig = ref(false)
@@ -364,7 +372,7 @@ export default {
     const fetchReminderConfig = async () => {
       try {
         const response = await axios.get(`${API_BASE}/opportunities/reminders/config`, {
-          params: { userId: store.user.value?.userId, userName: store.user.value?.name }
+          params: { userId: authStore.user?.userId, userName: authStore.user?.name }
         })
         const data = response.data
         if (data) {
@@ -398,7 +406,7 @@ export default {
           'reminder.enable.bid_result': String(reminderSwitches.bid_result)
         }
         const response = await axios.post(`${API_BASE}/opportunities/reminders/config`, payload, {
-          params: { userId: store.user.value?.userId, userName: store.user.value?.name }
+          params: { userId: authStore.user?.userId, userName: authStore.user?.name }
         })
         if (response.data.success) {
           showToast(response.data.message, 'success')
@@ -416,7 +424,7 @@ export default {
       isScanning.value = true
       try {
         const response = await axios.post(`${API_BASE}/opportunities/reminders/trigger-scan`, {}, {
-          params: { userId: store.user.value?.userId, userName: store.user.value?.name }
+          params: { userId: authStore.user?.userId, userName: authStore.user?.name }
         })
         if (response.data.success) {
           showToast(response.data.message, 'success')
@@ -452,13 +460,13 @@ export default {
       secret: localStorage.getItem('wecom_secret') || '••••••••••••••••••••••••••••••••'
     })
 
-    const users = computed(() => store.users.value || [])
+    const users = computed(() => userStore.users || [])
     const enabledUsersCount = computed(() => users.value.filter(item => item.enabled).length)
     const adminUsersCount = computed(() => users.value.filter(item => item.role === 'ADMIN').length)
-    const contactCount = computed(() => store.contacts.value?.length || 0)
-    const activeOpportunityCount = computed(() => store.metrics.value?.activeCount || 0)
-    const currentAdminName = computed(() => store.user.value?.name || '管理员')
-    const currentAdminId = computed(() => store.user.value?.userId || '-')
+    const contactCount = computed(() => userStore.contacts?.length || 0)
+    const activeOpportunityCount = computed(() => metricsStore.metrics?.activeCount || 0)
+    const currentAdminName = computed(() => authStore.user?.name || '管理员')
+    const currentAdminId = computed(() => authStore.user?.userId || '-')
 
     const updateSyncSummary = (text) => {
       syncSummary.value = `${formatNow()} ${text}`
@@ -490,9 +498,9 @@ export default {
     const syncWecomContacts = async () => {
       isSyncing.value = true
       try {
-        await store.fetchContacts()
-        updateSyncSummary(`已同步 ${store.contacts.value?.length || 0} 位企业微信联系人`)
-        showToast(`企微通讯录同步成功！已成功加载 ${store.contacts.value?.length || 0} 名销售人员。`, 'success')
+        await userStore.fetchContacts()
+        updateSyncSummary(`已同步 ${userStore.contacts?.length || 0} 位企业微信联系人`)
+        showToast(`企微通讯录同步成功！已成功加载 ${userStore.contacts?.length || 0} 名销售人员。`, 'success')
       } catch (err) {
         showToast('同步通讯录失败', 'error')
       } finally {
@@ -522,8 +530,8 @@ export default {
 
     const handleExport = () => {
       const params = new URLSearchParams({
-        userId: store.user.value?.userId || '',
-        userName: store.user.value?.name || ''
+        userId: authStore.user?.userId || '',
+        userName: authStore.user?.name || ''
       })
       updateDataAction('已发起数据导出请求')
       window.location.href = `${API_BASE}/wecom/export?${params.toString()}`
@@ -539,13 +547,13 @@ export default {
         try {
           const json = JSON.parse(evt.target.result)
           const response = await axios.post(`${API_BASE}/wecom/import`, json, {
-            params: { userId: store.user.value?.userId, userName: store.user.value?.name }
+            params: { userId: authStore.user?.userId, userName: authStore.user?.name }
           })
           if (response.data.success) {
             updateDataAction(`已导入备份文件 ${file.name}`)
             showToast(response.data.message, 'success')
-            await store.fetchOpportunities()
-            await store.fetchMetrics()
+            await oppStore.fetchOpportunities()
+            await metricsStore.fetchMetrics()
           } else {
             showToast(response.data.message, 'error')
           }
@@ -669,13 +677,13 @@ export default {
           ]
 
           const response = await axios.post(`${API_BASE}/wecom/import`, defaultMocks, {
-            params: { userId: store.user.value?.userId, userName: store.user.value?.name }
+            params: { userId: authStore.user?.userId, userName: authStore.user?.name }
           })
           if (response.data.success) {
             updateDataAction('已恢复演示数据')
             showToast('数据库初始化重置成功！', 'success')
-            await store.fetchOpportunities()
-            await store.fetchMetrics()
+            await oppStore.fetchOpportunities()
+            await metricsStore.fetchMetrics()
           }
         } catch (e) {
           showToast('恢复演示数据异常，请确保后端正常运行。', 'error')
@@ -685,9 +693,9 @@ export default {
 
     onMounted(async () => {
       await Promise.all([
-        store.fetchUsers(),
-        store.fetchContacts(),
-        store.fetchMetrics(),
+        userStore.fetchUsers(),
+        userStore.fetchContacts(),
+        metricsStore.fetchMetrics(),
         fetchReminderConfig()
       ])
     })

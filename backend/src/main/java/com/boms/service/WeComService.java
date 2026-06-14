@@ -140,6 +140,7 @@ public class WeComService {
     /**
      * Fetch all corporate members (Mocked list for sandbox)
      */
+    @org.springframework.cache.annotation.Cacheable("wecom_contacts")
     public List<Map<String, String>> getContactList() {
         List<Map<String, String>> list = new ArrayList<>();
         

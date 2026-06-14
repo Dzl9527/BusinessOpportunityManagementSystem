@@ -121,7 +121,11 @@
 <script>
 import { defineComponent, h, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useStore } from '../store'
+import { useAuthStore } from '../stores/useAuthStore'
+import { useOppStore } from '../stores/useOppStore'
+import { useAppStore } from '../stores/useAppStore'
+import { useUserStore } from '../stores/useUserStore'
+import { useMetricsStore } from '../stores/useMetricsStore'
 
 const Field = defineComponent({
   props: { label: String, full: Boolean },
@@ -190,15 +194,19 @@ export default {
   components: { Field, SelectInput, BooleanSelect, MultiSelect },
   setup() {
     const router = useRouter()
-    const store = useStore()
-    const activeStep = ref(0)
+        const authStore = useAuthStore()
+    const oppStore = useOppStore()
+    const appStore = useAppStore()
+    const userStore = useUserStore()
+    const metricsStore = useMetricsStore()
+const activeStep = ref(0)
     const submitting = ref(false)
     const duplicateMatches = ref([])
     const attachmentDraft = reactive({ fileName: '', fileType: 'other' })
     const formSteps = ['基础信息', '设备需求', '授权报备', '投标交付', '组织归属', '进展附件']
 
-    const optionList = (key) => store.opportunityOptions.value?.[key] || []
-    const userName = store.user.value?.name || '张经理'
+    const optionList = (key) => oppStore.opportunityOptions?.[key] || []
+    const userName = authStore.user?.name || '张经理'
     const form = reactive({
       name: '',
       company: '',
@@ -242,7 +250,7 @@ export default {
 
     const nextStep = async () => {
       if (activeStep.value <= 1 && form.company && form.name) {
-        const result = await store.checkDuplicates(form)
+        const result = await oppStore.checkDuplicates(form)
         duplicateMatches.value = result.matches || []
       }
       if (activeStep.value < formSteps.length - 1) activeStep.value += 1
@@ -266,7 +274,7 @@ export default {
     const handleSubmit = async () => {
       submitting.value = true
       try {
-        await store.submitOpportunity({ ...form, attachments: [...form.attachments] })
+        await oppStore.submitOpportunity({ ...form, attachments: [...form.attachments] })
         router.push({ name: 'List' })
       } finally {
         submitting.value = false
@@ -274,7 +282,7 @@ export default {
     }
 
     onMounted(async () => {
-      await store.fetchOpportunityOptions()
+      await oppStore.fetchOpportunityOptions()
     })
 
     return {

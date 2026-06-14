@@ -148,13 +148,22 @@
 <script>
 import { computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { useStore, toastState } from './store'
+import { useAuthStore } from './stores/useAuthStore'
+import { useOppStore } from './stores/useOppStore'
+import { useAppStore } from './stores/useAppStore'
+import { useUserStore } from './stores/useUserStore'
+import { useMetricsStore } from './stores/useMetricsStore'
 
 export default {
   setup() {
     const router = useRouter()
     const route = useRoute()
-    const store = useStore()
+    const authStore = useAuthStore()
+    const oppStore = useOppStore()
+    const appStore = useAppStore()
+    const userStore = useUserStore()
+    const metricsStore = useMetricsStore()
+
     const routeDescriptions = {
       Dashboard: '查看我的商机概览、待跟进事项和关键业务指标。',
       Submit: '发起商机提报，按手机端流程补齐业务字段。',
@@ -178,14 +187,14 @@ export default {
     })
 
     const isAdmin = computed(() => {
-      return store.user.value?.role === 'ADMIN' || store.user.value?.canViewAll
+      return authStore.user?.role === 'ADMIN' || authStore.user?.canViewAll
     })
 
-    const userInitial = computed(() => (store.user.value?.name || '我').slice(0, 1))
+    const userInitial = computed(() => (authStore.user?.name || '我').slice(0, 1))
 
     const userRoleLabel = computed(() => {
       if (isAdmin.value) return '管理员'
-      if (store.user.value?.role === 'LEADER') return '领导 / 授权用户'
+      if (authStore.user?.role === 'LEADER') return '领导 / 授权用户'
       return '普通用户'
     })
 
@@ -204,19 +213,19 @@ export default {
     }
 
     const sideStats = computed(() => ({
-      myCount: store.opportunities.value?.length || 0,
-      activeCount: store.metrics.value?.activeCount || 0,
-      pipelineValue: formatCompactCurrency(store.metrics.value?.totalPipeline || 0),
-      winRate: `${Number(store.metrics.value?.winRate || 0).toFixed(1)}%`
+      myCount: oppStore.opportunities?.length || 0,
+      activeCount: metricsStore.metrics?.activeCount || 0,
+      pipelineValue: formatCompactCurrency(metricsStore.metrics?.totalPipeline || 0),
+      winRate: `${Number(metricsStore.metrics?.winRate || 0).toFixed(1)}%`
     }))
 
     const handleLogout = () => {
-      store.logout()
+      authStore.logout()
       router.push({ name: 'Login' })
     }
 
     const handleToggleTheme = () => {
-      store.toggleTheme()
+      appStore.toggleTheme()
     }
 
     const triggerNewOpp = () => {
@@ -248,14 +257,14 @@ export default {
     }
 
     onMounted(() => {
-      document.documentElement.setAttribute('data-theme', store.theme.value)
+      document.documentElement.setAttribute('data-theme', appStore.theme)
       if (window.lucide) {
         window.lucide.createIcons()
       }
-      if (store.user.value) {
-        store.fetchMetrics()
-        if (!store.opportunities.value?.length) {
-          store.fetchMyOpportunities()
+      if (authStore.user) {
+        metricsStore.fetchMetrics()
+        if (!oppStore.opportunities?.length) {
+          oppStore.fetchMyOpportunities()
         }
       }
     })
@@ -266,15 +275,15 @@ export default {
           window.lucide.createIcons()
         }
       }, 50)
-      if (store.user.value) {
-        store.fetchMetrics()
+      if (authStore.user) {
+        metricsStore.fetchMetrics()
       }
     })
 
     return {
-      user: store.user,
-      theme: store.theme,
-      toast: toastState,
+      user: computed(() => authStore.user),
+      theme: computed(() => appStore.theme),
+      toast: computed(() => appStore.toastState),
       currentRouteTitle,
       currentRouteDescription,
       showNewOppButton,
