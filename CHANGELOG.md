@@ -2,7 +2,22 @@
 
 本文档记录已经进入项目版本管理的功能变化、修复和发布注意事项。需求细节和方案过程请查看 `docs/` 目录。
 
-## [Unreleased]
+## [2.0.0] - 2026-06-14
+
+### Added
+- **自动化测试与构建 (Phase 5)**: 引入基于 JUnit 5 与 Mockito 的后端单元测试体系，完成 `JwtTokenProvider`, `SecurityUtils`, `OpportunityAuditService` 的核心安全链路覆盖测试；部署了 `.github/workflows/ci.yml` 构建流水线护城河。
+- **前端架构演进 (Phase 4)**: 全面引入 TypeScript 与 Pinia。
+  - 将原有的巨型 `store/index.js` 按领域拆分为 `useAuthStore.ts`, `useOppStore.ts`, `useAppStore.ts` 等模块化状态仓库。
+  - 配置 `tsconfig.json` 并应用渐进式 TS 演进策略（`noImplicitAny: false`），所有 Vue 组件全部升级为 `<script setup lang="ts">`。
+- **Redis 缓存架构 (Phase 3)**: 引入 `spring-boot-starter-data-redis` 与 `spring-boot-starter-cache`，对高频查询的四个商机大盘指标接口与企业微信通讯录接口增加缓存支持 (`@Cacheable`)，并设置全局 TTL 为 5 分钟以保证最终一致性。
+- **Docker 化基础设施 (Phase 1)**: 新增项目级 `docker-compose.yml` 及前后端 `Dockerfile`，支持生产环境 MySQL 8.0 + Redis 7.0 的一键部署编排。
+- **Spring Profiles 环境隔离 (Phase 1)**: 配置 `application-prod.yml` 生产环境并接入 MySQL；本地环境默认保留 H2 数据库以保证无缝开发体验。
+- **JWT 安全体系 (Phase 2)**: 引入 Spring Security 框架与 `java-jwt`，接管应用层所有接口的安全拦截与 Token 签发。
+
+### Changed
+- **商机列表高级筛选 (UI改造)**: 引入 Grid 多列布局重构移动端高级筛选面板；新增商机阶段、优先级、来源筛选下拉框；通过原生 `<datalist>` 引入了支持模糊搜索的用户选择器；新增内置“本周/本月/本季”的预计成交日期快捷选项。
+- **商机列表检索后端 (API改造)**: `OpportunitySpec` 添加商机来源、提报人精确匹配及成交日期的区间查询支持。
+- **前后端接口鉴权解耦 (Phase 2)**: 彻底移除了前端 Axios 在 URL `?wecomUserId=` 中透传身份的逻辑，采用标准的 HTTP `Authorization: Bearer` 报头；同步清除了后端 Controller 中的 `@RequestParam` 依赖，改为由安全上下文统一获取用户身份。
 
 ### Changed
 

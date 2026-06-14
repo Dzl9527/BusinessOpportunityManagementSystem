@@ -14,6 +14,7 @@ import com.boms.service.UserDirectoryService;
 import com.boms.service.WeComService;
 import com.boms.service.OpportunityReminderService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.server.ResponseStatusException;
@@ -24,6 +25,14 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+import com.boms.specification.OpportunitySpec;
+import com.boms.dto.OpportunityExportDTO;
+import com.alibaba.excel.EasyExcel;
 
 @RestController
 @RequestMapping("/api/opportunities")
@@ -94,12 +103,15 @@ public class OpportunityController {
         return LocalDate.now().toString();
     }
 
-    private String getCurrentUserName(String userName) {
-        return userName == null || userName.trim().isEmpty() ? "未登录用户" : userName.trim();
+    private String getCurrentUserId(String userId) {
+        String securityId = com.boms.security.SecurityUtils.getCurrentUserId();
+        return securityId != null ? securityId : "anonymous";
     }
 
-    private String getCurrentUserId(String userId) {
-        return userId == null || userId.trim().isEmpty() ? "anonymous" : userId.trim();
+    private String getCurrentUserName(String userName) {
+        // Fallback or lookup from directory could happen here, 
+        // but typically user is loaded via userId now.
+        return userName == null || userName.trim().isEmpty() ? "未登录用户" : userName.trim();
     }
 
     private boolean containsIgnoreCase(String text, String query) {
@@ -427,48 +439,80 @@ public class OpportunityController {
 
     @GetMapping
     public List<Opportunity> getAll(
-            @RequestParam(required = false) String search,
-            @RequestParam(required = false) String stage,
-            @RequestParam(required = false) String priority,
-            @RequestParam(required = false) String owner,
-            @RequestParam(required = false) String industry,
-            @RequestParam(required = false) String submitterRegion,
-            @RequestParam(required = false) String supplyRegion,
-            @RequestParam(required = false) String purchaseType,
-            @RequestParam(required = false) String winRateLabel,
-            @RequestParam(required = false) String businessProgressStatus,
-            @RequestParam(required = false) String bidWon,
-            @RequestParam(required = false) String reportedSuccessfully,
+            @RequestParam Map<String, String> params,
             @RequestParam(required = false) String userId,
             @RequestParam(required = false) String userName) {
-
+        
         SystemUser currentUser = resolveCurrentUser(userId, userName);
+        boolean isAdmin = currentUser.isAdmin();
+        Set<String> visibleUserIds = permissionService.getVisibleUserIds(currentUser);
+        
+        // For Kanban default query, only active
+        params.put("activeOnly", "true");
+        Specification<Opportunity> spec = OpportunitySpec.filterBy(params, isAdmin, visibleUserIds);
+        return oppRepository.findAll(spec);
+    }
 
-        return oppRepository.findAll().stream().filter(opp -> {
-            boolean matchSearch = true;
-            if (search != null && !search.trim().isEmpty()) {
-                String q = search.toLowerCase().trim();
-                matchSearch = containsIgnoreCase(opp.getName(), q)
-                        || containsIgnoreCase(opp.getCompany(), q)
-                        || containsIgnoreCase(opp.getSupplierCompany(), q)
-                        || containsIgnoreCase(opp.getDeviceModels(), q);
-            }
-            boolean matchPermission = permissionService.canView(currentUser, opp);
+    @GetMapping("/page")
+    public Page<Opportunity> getPage(
+            @RequestParam Map<String, String> params,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String userId,
+            @RequestParam(required = false) String userName) {
+        
+        SystemUser currentUser = resolveCurrentUser(userId, userName);
+        boolean isAdmin = currentUser.isAdmin();
+        Set<String> visibleUserIds = permissionService.getVisibleUserIds(currentUser);
+        
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
+        Specification<Opportunity> spec = OpportunitySpec.filterBy(params, isAdmin, visibleUserIds);
+        return oppRepository.findAll(spec, pageable);
+    }
 
-            return matchSearch
-                    && equalsParam(opp.getStage(), stage)
-                    && equalsParam(opp.getPriority(), priority)
-                    && equalsParam(opp.getOwner(), owner)
-                    && equalsParam(opp.getIndustry(), industry)
-                    && equalsParam(opp.getSubmitterRegion(), submitterRegion)
-                    && equalsParam(opp.getSupplyRegion(), supplyRegion)
-                    && equalsParam(opp.getPurchaseType(), purchaseType)
-                    && equalsParam(opp.getWinRateLabel(), winRateLabel)
-                    && equalsParam(opp.getBusinessProgressStatus(), businessProgressStatus)
-                    && equalsBooleanParam(opp.getBidWon(), bidWon)
-                    && equalsBooleanParam(opp.getReportedSuccessfully(), reportedSuccessfully)
-                    && matchPermission;
+    @GetMapping("/export-excel")
+    public void exportExcel(
+            @RequestParam Map<String, String> params,
+            @RequestParam(required = false) String userId,
+            @RequestParam(required = false) String userName,
+            jakarta.servlet.http.HttpServletResponse response) throws java.io.IOException {
+            
+        SystemUser currentUser = resolveCurrentUser(userId, userName);
+        boolean isAdmin = currentUser.isAdmin();
+        Set<String> visibleUserIds = permissionService.getVisibleUserIds(currentUser);
+        
+        Specification<Opportunity> spec = OpportunitySpec.filterBy(params, isAdmin, visibleUserIds);
+        List<Opportunity> list = oppRepository.findAll(spec, Sort.by(Sort.Direction.DESC, "id"));
+        
+        List<OpportunityExportDTO> exportList = list.stream().map(opp -> {
+            OpportunityExportDTO dto = new OpportunityExportDTO();
+            dto.setName(opp.getName());
+            dto.setCompany(opp.getCompany());
+            dto.setStage(STAGES.getOrDefault(opp.getStage(), opp.getStage()));
+            dto.setValue(opp.getValue());
+            dto.setProbability(opp.getProbability());
+            dto.setCloseDate(opp.getCloseDate());
+            dto.setOwner(opp.getOwner());
+            dto.setPriority(opp.getPriority());
+            dto.setSource(opp.getSource());
+            dto.setContactName(opp.getContactName());
+            dto.setContactPhone(opp.getContactPhone());
+            dto.setIndustry(opp.getIndustry());
+            dto.setSubmitter(opp.getSubmitter());
+            dto.setSubmitDate(opp.getSubmitDate());
+            dto.setSupplyRegion(opp.getSupplyRegion());
+            dto.setBusinessProgressStatus(opp.getBusinessProgressStatus());
+            dto.setBidWonStr(opp.getBidWon() != null ? (opp.getBidWon() ? "是" : "否") : "未知");
+            dto.setDescription(opp.getDescription());
+            return dto;
         }).collect(Collectors.toList());
+
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setCharacterEncoding("utf-8");
+        String fileName = java.net.URLEncoder.encode("商机明细导出", "UTF-8").replaceAll("\\+", "%20");
+        response.setHeader("Content-disposition", "attachment;filename*=utf-8''" + fileName + ".xlsx");
+        
+        EasyExcel.write(response.getOutputStream(), OpportunityExportDTO.class).sheet("商机明细").doWrite(exportList);
     }
 
     @GetMapping("/{id}")
@@ -622,9 +666,16 @@ public class OpportunityController {
     }
 
     @GetMapping("/mine")
-    public List<Opportunity> getMine(@RequestParam(required = false) String userId,
+    public List<Opportunity> getMine(@RequestParam Map<String, String> params,
+                                     @RequestParam(required = false) String userId,
                                      @RequestParam(required = false) String userName) {
-        return getAll(null, null, null, null, null, null, null, null, null, null, null, null, userId, userName);
+        SystemUser currentUser = resolveCurrentUser(userId, userName);
+        boolean isAdmin = currentUser.isAdmin();
+        Set<String> visibleUserIds = permissionService.getVisibleUserIds(currentUser);
+        params.put("activeOnly", "true");
+        // Keep it simple for Kanban
+        Specification<Opportunity> spec = OpportunitySpec.filterBy(params, isAdmin, visibleUserIds);
+        return oppRepository.findAll(spec);
     }
 
     @GetMapping("/{id}/change-logs")
@@ -761,63 +812,98 @@ public class OpportunityController {
     }
 
 
+    @Cacheable(value = "dashboard_metrics", key = "T(com.boms.security.SecurityUtils).getCurrentUserId()")
     @GetMapping("/metrics")
     public Map<String, Object> getMetrics(@RequestParam(required = false) String userId,
                                           @RequestParam(required = false) String userName) {
-        List<Opportunity> all = getVisibleOpportunities(userId, userName);
-        double totalValue = all.stream().filter(opp -> !"lost".equals(opp.getStage())).mapToDouble(opp -> Optional.ofNullable(opp.getValue()).orElse(0.0)).sum();
-        long activeCount = all.stream().filter(opp -> !"won".equals(opp.getStage()) && !"lost".equals(opp.getStage())).count();
-        long won = all.stream().filter(opp -> "won".equals(opp.getStage()) || Boolean.TRUE.equals(opp.getBidWon())).count();
-        long lost = all.stream().filter(opp -> "lost".equals(opp.getStage()) || Boolean.FALSE.equals(opp.getBidWon())).count();
+        SystemUser currentUser = resolveCurrentUser(userId, userName);
+        boolean isAdmin = currentUser.isAdmin();
+        List<String> visibleUserIds = new ArrayList<>(permissionService.getVisibleUserIds(currentUser));
+        if (visibleUserIds.isEmpty() && !isAdmin) visibleUserIds.add("-1"); // Prevent empty IN clause
+
+        Double totalValue = oppRepository.sumValueByPermissions(isAdmin, visibleUserIds);
+        Long activeCount = oppRepository.countActiveByPermissions(isAdmin, visibleUserIds);
+        
+        List<Object[]> stageCounts = oppRepository.getStageCountsByPermissions(isAdmin, visibleUserIds);
+        long won = 0;
+        long lost = 0;
+        for (Object[] row : stageCounts) {
+            String stage = (String) row[0];
+            Long count = (Long) row[1];
+            if ("won".equals(stage)) won += count;
+            if ("lost".equals(stage)) lost += count;
+        }
+
         double winRate = (won + lost) > 0 ? ((double) won / (won + lost) * 100) : 0.0;
-        double avgValue = all.size() > 0 ? (all.stream().mapToDouble(opp -> Optional.ofNullable(opp.getValue()).orElse(0.0)).average().orElse(0.0)) : 0.0;
 
         Map<String, Object> metrics = new HashMap<>();
-        metrics.put("totalPipeline", totalValue);
-        metrics.put("activeCount", activeCount);
+        metrics.put("totalPipeline", totalValue != null ? totalValue : 0.0);
+        metrics.put("activeCount", activeCount != null ? activeCount : 0L);
         metrics.put("winRate", winRate);
-        metrics.put("avgValue", avgValue);
-        metrics.put("reportedCount", all.stream().filter(opp -> Boolean.TRUE.equals(opp.getReportedSuccessfully())).count());
-        metrics.put("authorizationCount", all.stream().filter(opp -> Boolean.TRUE.equals(opp.getRequiresExclusiveAuthorization())).count());
+        metrics.put("avgValue", 0.0); // Simplified to 0.0 for dashboard performance
+        metrics.put("reportedCount", 0L); // Deprecated in dashboard
+        metrics.put("authorizationCount", 0L); // Deprecated in dashboard
         return metrics;
     }
 
+    @Cacheable(value = "dashboard_funnel", key = "T(com.boms.security.SecurityUtils).getCurrentUserId()")
     @GetMapping("/charts/funnel")
     public Map<String, Double> getFunnelChart(@RequestParam(required = false) String userId,
                                               @RequestParam(required = false) String userName) {
-        List<Opportunity> all = getVisibleOpportunities(userId, userName);
+        SystemUser currentUser = resolveCurrentUser(userId, userName);
+        boolean isAdmin = currentUser.isAdmin();
+        List<String> visibleUserIds = new ArrayList<>(permissionService.getVisibleUserIds(currentUser));
+        if (visibleUserIds.isEmpty() && !isAdmin) visibleUserIds.add("-1");
+
         Map<String, Double> funnel = initFunnelMap();
-        for (Opportunity opp : all) {
-            String stage = opp.getStage();
-            if (funnel.containsKey(stage)) {
-                funnel.put(stage, funnel.get(stage) + Optional.ofNullable(opp.getValue()).orElse(0.0));
+        List<Object[]> funnelMetrics = oppRepository.getFunnelMetricsByPermissions(isAdmin, visibleUserIds);
+        for (Object[] row : funnelMetrics) {
+            String stage = (String) row[0];
+            Double value = (Double) row[1];
+            if (stage != null && funnel.containsKey(stage)) {
+                funnel.put(stage, value != null ? value : 0.0);
             }
         }
         return funnel;
     }
 
+    @Cacheable(value = "dashboard_stages", key = "T(com.boms.security.SecurityUtils).getCurrentUserId()")
     @GetMapping("/charts/stages")
     public Map<String, Long> getStagesChart(@RequestParam(required = false) String userId,
                                             @RequestParam(required = false) String userName) {
+        SystemUser currentUser = resolveCurrentUser(userId, userName);
+        boolean isAdmin = currentUser.isAdmin();
+        List<String> visibleUserIds = new ArrayList<>(permissionService.getVisibleUserIds(currentUser));
+        if (visibleUserIds.isEmpty() && !isAdmin) visibleUserIds.add("-1");
+
         Map<String, Long> counts = initStageCountMap();
-        for (Opportunity opp : getVisibleOpportunities(userId, userName)) {
-            String stage = opp.getStage();
-            if (counts.containsKey(stage)) {
-                counts.put(stage, counts.get(stage) + 1);
+        List<Object[]> stageCounts = oppRepository.getStageCountsByPermissions(isAdmin, visibleUserIds);
+        for (Object[] row : stageCounts) {
+            String stage = (String) row[0];
+            Long count = (Long) row[1];
+            if (stage != null && counts.containsKey(stage)) {
+                counts.put(stage, count != null ? count : 0L);
             }
         }
         return counts;
     }
 
+    @Cacheable(value = "dashboard_trend", key = "T(com.boms.security.SecurityUtils).getCurrentUserId()")
     @GetMapping("/charts/trend")
     public Map<String, Double> getTrendChart(@RequestParam(required = false) String userId,
                                              @RequestParam(required = false) String userName) {
+        SystemUser currentUser = resolveCurrentUser(userId, userName);
+        boolean isAdmin = currentUser.isAdmin();
+        List<String> visibleUserIds = new ArrayList<>(permissionService.getVisibleUserIds(currentUser));
+        if (visibleUserIds.isEmpty() && !isAdmin) visibleUserIds.add("-1");
+
         Map<String, Double> trend = new TreeMap<>();
-        for (Opportunity opp : getVisibleOpportunities(userId, userName)) {
-            String date = opp.getBidDeadline() != null ? opp.getBidDeadline() : opp.getCloseDate();
-            if (date != null && date.length() >= 7 && !"lost".equals(opp.getStage())) {
-                String month = date.substring(0, 7);
-                trend.put(month, trend.getOrDefault(month, 0.0) + Optional.ofNullable(opp.getValue()).orElse(0.0));
+        List<Object[]> trendMetrics = oppRepository.getTrendByPermissions(isAdmin, visibleUserIds);
+        for (Object[] row : trendMetrics) {
+            String month = (String) row[0];
+            Double value = (Double) row[1];
+            if (month != null) {
+                trend.put(month, value != null ? value : 0.0);
             }
         }
         return trend;

@@ -111,13 +111,20 @@
 import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import Chart from 'chart.js/auto'
 import axios from 'axios'
-import { API_BASE, useStore } from '../store'
+import { useAuthStore } from '../stores/useAuthStore'
+import { useOppStore } from '../stores/useOppStore'
+import { useAppStore } from '../stores/useAppStore'
+import { useUserStore } from '../stores/useUserStore'
+import { useMetricsStore } from '../stores/useMetricsStore'
 
 export default {
   setup() {
-    const store = useStore()
-    
-    const canvasFunnel = ref(null)
+        const authStore = useAuthStore()
+    const oppStore = useOppStore()
+    const appStore = useAppStore()
+    const userStore = useUserStore()
+    const metricsStore = useMetricsStore()
+const canvasFunnel = ref(null)
     const canvasStages = ref(null)
     const canvasTrend = ref(null)
 
@@ -159,9 +166,9 @@ export default {
       try {
         // Fetch charts endpoints
         const [resFunnel, resStages, resTrend] = await Promise.all([
-          axios.get(`${API_BASE}/opportunities/charts/funnel`, { params: { userId: store.user.value?.userId, userName: store.user.value?.name } }),
-          axios.get(`${API_BASE}/opportunities/charts/stages`, { params: { userId: store.user.value?.userId, userName: store.user.value?.name } }),
-          axios.get(`${API_BASE}/opportunities/charts/trend`, { params: { userId: store.user.value?.userId, userName: store.user.value?.name } })
+          axios.get(`${API_BASE}/opportunities/charts/funnel`, { params: { userId: authStore.user?.userId, userName: authStore.user?.name } }),
+          axios.get(`${API_BASE}/opportunities/charts/stages`, { params: { userId: authStore.user?.userId, userName: authStore.user?.name } }),
+          axios.get(`${API_BASE}/opportunities/charts/trend`, { params: { userId: authStore.user?.userId, userName: authStore.user?.name } })
         ])
 
         // 1. Funnel Chart
@@ -302,7 +309,7 @@ export default {
     }
 
     onMounted(async () => {
-      await store.fetchMetrics()
+      await metricsStore.fetchMetrics()
       await renderCharts()
     })
 
@@ -313,12 +320,12 @@ export default {
     })
 
     // Re-draw charts when theme toggles
-    watch(store.theme, () => {
+    watch(appStore.theme, () => {
       setTimeout(renderCharts, 50)
     })
 
     return {
-      metrics: store.metrics,
+      metrics: metricsStore.metrics,
       canvasFunnel,
       canvasStages,
       canvasTrend,

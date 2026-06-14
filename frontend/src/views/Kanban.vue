@@ -176,15 +176,22 @@
 
 <script>
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { useStore } from '../store'
+import { useAuthStore } from '../stores/useAuthStore'
+import { useOppStore } from '../stores/useOppStore'
+import { useAppStore } from '../stores/useAppStore'
+import { useUserStore } from '../stores/useUserStore'
+import { useMetricsStore } from '../stores/useMetricsStore'
 import OpportunityDrawer from '../components/OpportunityDrawer.vue'
 
 export default {
   components: { OpportunityDrawer },
   setup() {
-    const store = useStore()
-
-    const STAGES = {
+        const authStore = useAuthStore()
+    const oppStore = useOppStore()
+    const appStore = useAppStore()
+    const userStore = useUserStore()
+    const metricsStore = useMetricsStore()
+const STAGES = {
       prospecting: "潜在线索",
       qualification: "需求确认",
       proposal: "方案报价",
@@ -266,7 +273,7 @@ export default {
     }
 
     const getStageOpps = (stageKey) => {
-      return store.opportunities.value.filter(o => o.stage === stageKey)
+      return oppStore.opportunities.filter(o => o.stage === stageKey)
     }
 
     const getStageValueTotal = (stageKey) => {
@@ -283,13 +290,13 @@ export default {
       activeDragStage.value = null
       if (!draggedOppId) return
 
-      const opp = store.opportunities.value.find(o => o.id === draggedOppId)
+      const opp = oppStore.opportunities.find(o => o.id === draggedOppId)
       if (opp && opp.stage !== targetStage) {
         const updated = {
           ...opp,
           stage: targetStage
         }
-        await store.updateOpp(opp.id, updated)
+        await oppStore.updateOpp(opp.id, updated)
       }
       draggedOppId = null
     }
@@ -305,7 +312,7 @@ export default {
     }
 
     const onOppUpdated = async () => {
-      await store.fetchMyOpportunities()
+      await oppStore.fetchMyOpportunities()
     }
 
     const handleStageChange = () => {
@@ -336,13 +343,13 @@ export default {
     }
 
     const handleCreateSubmit = async () => {
-      await store.createOpp(newOpp.value)
+      await oppStore.createOpp(newOpp.value)
       createModalVisible.value = false
     }
 
     onMounted(async () => {
-      await store.fetchMyOpportunities()
-      await store.fetchContacts()
+      await oppStore.fetchMyOpportunities()
+      await userStore.fetchContacts()
       window.addEventListener('open-new-opp-modal', initNewOppForm)
     })
 
@@ -354,7 +361,7 @@ export default {
       STAGES,
       STAGE_COLORS,
       boardStages,
-      contacts: store.contacts,
+      contacts: userStore.contacts,
       createModalVisible,
       activeDragStage,
       newOpp,

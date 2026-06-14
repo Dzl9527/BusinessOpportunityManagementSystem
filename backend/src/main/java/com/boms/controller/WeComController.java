@@ -3,6 +3,7 @@ package com.boms.controller;
 import com.boms.model.Opportunity;
 import com.boms.model.SystemUser;
 import com.boms.repository.OpportunityRepository;
+import com.boms.security.JwtTokenProvider;
 import com.boms.service.UserDirectoryService;
 import com.boms.service.WeComService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +22,9 @@ import java.util.Map;
 @RequestMapping("/api/wecom")
 @CrossOrigin(origins = "*")
 public class WeComController {
+
+    @Autowired
+    private JwtTokenProvider jwtTokenProvider;
 
     @Autowired
     private WeComService weComService;
@@ -66,7 +70,8 @@ public class WeComController {
         }
 
         Map<String, Object> result = new HashMap<>();
-        result.put("token", "jwt_token_wecom_session_" + System.currentTimeMillis());
+        String token = jwtTokenProvider.generateToken(userId, localUser.getName());
+        result.put("token", token);
         result.put("userId", userId);
         result.put("name", localUser.getName());
         result.put("role", localUser.getRole());

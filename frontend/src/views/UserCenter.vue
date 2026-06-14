@@ -120,14 +120,21 @@
 <script>
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { useStore } from '../store'
+import { useAuthStore } from '../stores/useAuthStore'
+import { useOppStore } from '../stores/useOppStore'
+import { useAppStore } from '../stores/useAppStore'
+import { useUserStore } from '../stores/useUserStore'
+import { useMetricsStore } from '../stores/useMetricsStore'
 
 export default {
   setup() {
     const router = useRouter()
-    const store = useStore()
-
-    const user = computed(() => store.user.value)
+        const authStore = useAuthStore()
+    const oppStore = useOppStore()
+    const appStore = useAppStore()
+    const userStore = useUserStore()
+    const metricsStore = useMetricsStore()
+const user = computed(() => authStore.user)
     const isAdmin = computed(() => user.value?.role === 'ADMIN' || user.value?.canViewAll)
     const avatarText = computed(() => (user.value?.name || '我').slice(0, 1))
     const roleLabel = computed(() => {
@@ -159,15 +166,15 @@ export default {
       if (user.value?.role === 'LEADER') return '可编辑自己的商机，以及白名单范围内的商机。'
       return '默认只能编辑自己有权限的商机。'
     })
-    const themeButtonText = computed(() => store.theme.value === 'dark' ? '切换为浅色模式' : '切换为深色模式')
+    const themeButtonText = computed(() => appStore.theme === 'dark' ? '切换为浅色模式' : '切换为深色模式')
 
     const logout = () => {
-      store.logout()
+      authStore.logout()
       router.push({ name: 'Login' })
     }
 
     const toggleTheme = () => {
-      store.toggleTheme()
+      appStore.toggleTheme()
     }
 
     const goUsers = () => {
