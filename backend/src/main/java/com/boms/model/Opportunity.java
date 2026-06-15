@@ -16,7 +16,7 @@ public class Opportunity {
     @Column(length = 1000)
     private String name;
 
-    @Column(length = 5000)
+    @Column(columnDefinition = "TEXT")
     private String company;
     private String stage; // prospecting, qualification, proposal, negotiation, won, lost
     @Column(name = "opp_value")
@@ -96,13 +96,13 @@ public class Opportunity {
     private String bidDocumentFlowNo;
     private String bidDocumentFlowStatus;
 
-    @Column(length = 3000)
+    @Column(columnDefinition = "TEXT")
     private String weeklyProgress;
 
-    @Column(length = 3000)
+    @Column(columnDefinition = "TEXT")
     private String legacyExtraJson;
 
-    @Column(length = 3000)
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     @OneToMany(mappedBy = "opportunity", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
