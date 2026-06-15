@@ -13,7 +13,7 @@ public class Opportunity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(length = 1000)
+    @Column(columnDefinition = "TEXT")
     private String name;
 
     @Column(columnDefinition = "TEXT")
@@ -35,13 +35,13 @@ public class Opportunity {
     private String govMarketManager;
     private String submitterRegion;
     private String industry;
-    @Column(length = 2000)
+    @Column(columnDefinition = "TEXT")
     private String supplierCompany;
 
-    @Column(length = 1000)
+    @Column(columnDefinition = "TEXT")
     private String deviceTypes;
 
-    @Column(length = 1000)
+    @Column(columnDefinition = "TEXT")
     private String deviceModels;
 
     private Integer demandQuantity;
@@ -53,7 +53,7 @@ public class Opportunity {
     private String supplyRegion;
     private Boolean requiresExclusiveAuthorization;
 
-    @Column(length = 1000)
+    @Column(columnDefinition = "TEXT")
     private String authorizedCategories;
 
     private String expectedDeliveryDate;
