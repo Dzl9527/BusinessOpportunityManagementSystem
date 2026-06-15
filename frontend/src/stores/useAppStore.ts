@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
 export const API_HOST = window.location.hostname || 'localhost'
-export const API_BASE = `http://${API_HOST}:8080/api`
+export const API_BASE = '/api'
 
 export const useAppStore = defineStore('app', () => {
   const toastState = ref({
