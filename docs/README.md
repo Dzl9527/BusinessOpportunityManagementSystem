@@ -37,11 +37,14 @@
 - [需求变更记录.md](file:///C:/Users/Administrator/.gemini/antigravity/worktrees/BusinessOpportunityManagementSystem/verify-worktree-isolation-impact/docs/changelog/需求变更记录.md)
 - [2026-05-24-本地文档库替代Notion.md](file:///C:/Users/Administrator/.gemini/antigravity/worktrees/BusinessOpportunityManagementSystem/verify-worktree-isolation-impact/docs/decisions/2026-05-24-本地文档库替代Notion.md)
 
-### 4. 数据库部署脚本 (`deploy/sql/`)
+### 4. 部署文档
+- [BOMS Docker Production Deployment Guide](./docker-production-deployment-guide.md)
+
+### 5. 数据库部署脚本 (`deploy/sql/`)
 *注意：为保持文档库纯粹，涉及数据库结构的 `.sql` 脚本已被迁移至项目根目录的部署资源文件夹中。*
 - [2026-05-24-opportunity-field-migration.sql](file:///C:/Users/Administrator/.gemini/antigravity/worktrees/BusinessOpportunityManagementSystem/verify-worktree-isolation-impact/deploy/sql/2026-05-24-opportunity-field-migration.sql)
 
-### 5. 新增标准模版与规范 (归档至 `docs/templates/`)
+### 6. 新增标准模版与规范 (归档至 `docs/templates/`)
 - `docs/templates/PRD.md`
 - `docs/templates/business-process.md`
 - `docs/templates/field-dictionary.md`
