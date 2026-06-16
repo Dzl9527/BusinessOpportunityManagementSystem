@@ -5,7 +5,7 @@ services:
     image: mysql:8.0
     container_name: boms-mysql
     environment:
-      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: QtkDvD4N8mXs29Ab
       MYSQL_DATABASE: boms
     ports:
       - "3306:3306"
