@@ -787,6 +787,32 @@ body {
   border-radius: 0;
   box-shadow: none;
   border-bottom: 1px solid var(--border-color);
+  max-height: calc(100vh - 380px);
+  overflow-y: auto;
+}
+
+/* Sticky Header */
+.opportunity-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 11;
+  background-color: var(--bg-secondary);
+}
+
+/* Corner Cells: Top-Left and Top-Right (must be higher z-index) */
+.opportunity-table thead th:first-child,
+.opportunity-table thead th:last-child {
+  z-index: 12;
+}
+
+/* Bottom border for sticky header */
+.opportunity-table thead th::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .custom-table th {
