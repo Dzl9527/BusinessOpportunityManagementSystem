@@ -95,7 +95,7 @@
       <div class="list-meta-row">
         <div>
           <strong>商机结果</strong>
-          <p>{{ opportunities.length }} 条结果</p>
+          <p>{{ oppStore.totalElements }} 条结果</p>
         </div>
       </div>
 
@@ -395,7 +395,7 @@ const readUiPrefs = () => {
       ownerOrSubmitter: ''
     })
 
-    const filtersExpanded = ref(true)
+    const filtersExpanded = ref(false)
     const modalVisible = ref(false)
     const isEdit = ref(false)
     const form = ref({})
