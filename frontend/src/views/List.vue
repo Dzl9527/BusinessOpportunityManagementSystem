@@ -99,68 +99,70 @@
         </div>
       </div>
 
-      <div class="table-container mobile-opportunity-table">
-        <table class="custom-table opportunity-table">
-          <thead>
-            <tr>
-              <th>项目名称</th>
-              <th>采购单位</th>
-              <th>行业</th>
-              <th>设备类型</th>
-              <th>预估金额</th>
-              <th>赢率</th>
-              <th>业务进度</th>
-              <th>供货省区</th>
-              <th>投标截止</th>
-              <th style="text-align: right;">操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="opp in opportunities" :key="opp.id">
-              <td>
-                <a href="#" @click.prevent="openDetail(opp.id)" style="color: var(--primary); font-weight: 700; text-decoration: none;">
-                  {{ opp.name || '未命名项目' }}
-                </a>
-                <div class="muted-line">提报人：{{ opp.submitter || opp.creator || '-' }}</div>
-              </td>
-              <td>{{ opp.company || '-' }}</td>
-              <td>{{ opp.industry || '-' }}</td>
-              <td>
-                {{ opp.deviceTypes || '-' }}
-                <div v-if="isDeviceTypeLocked(opp)" class="muted-line">{{ deviceTypeLockText(opp) }}</div>
-              </td>
-              <td style="font-weight: 700;">{{ formatBusinessAmount(opp) }}</td>
-              <td>{{ opp.winRateLabel || `${opp.probability || 0}%` }}</td>
-              <td><span class="progress-pill">{{ opp.businessProgressStatus || '新提报' }}</span></td>
-              <td>{{ opp.supplyRegion || '-' }}</td>
-              <td>{{ opp.bidDeadline || opp.closeDate || '-' }}</td>
-              <td style="text-align: right;">
-                <div style="display: inline-flex; gap: 8px;">
-                  <button class="btn-icon" @click="openEditOpp(opp.id)" title="编辑自己提报的信息" style="width: 32px; height: 32px;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
-                  </button>
-                  <button class="btn-icon" @click="handleDelete(opp)" title="删除" style="width: 32px; height: 32px; border-color: var(--danger-light); color: var(--danger);">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-                  </button>
-                </div>
-              </td>
-            </tr>
-            <tr v-if="opportunities.length === 0">
-              <td colspan="10" style="text-align: center; color: var(--text-muted); padding: 32px 0;">没有查找到符合条件的商机提报</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
+      <div class="data-view-card">
+        <div class="table-container mobile-opportunity-table">
+          <table class="custom-table opportunity-table">
+            <thead>
+              <tr>
+                <th>项目名称</th>
+                <th>采购单位</th>
+                <th>行业</th>
+                <th>设备类型</th>
+                <th>预估金额</th>
+                <th>赢率</th>
+                <th>业务进度</th>
+                <th>供货省区</th>
+                <th>投标截止</th>
+                <th style="text-align: right;">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="opp in opportunities" :key="opp.id">
+                <td>
+                  <a href="#" @click.prevent="openDetail(opp.id)" style="color: var(--primary); font-weight: 700; text-decoration: none;">
+                    {{ opp.name || '未命名项目' }}
+                  </a>
+                  <div class="muted-line">提报人：{{ opp.submitter || opp.creator || '-' }}</div>
+                </td>
+                <td>{{ opp.company || '-' }}</td>
+                <td>{{ opp.industry || '-' }}</td>
+                <td>
+                  {{ opp.deviceTypes || '-' }}
+                  <div v-if="isDeviceTypeLocked(opp)" class="muted-line">{{ deviceTypeLockText(opp) }}</div>
+                </td>
+                <td style="font-weight: 700;">{{ formatBusinessAmount(opp) }}</td>
+                <td>{{ opp.winRateLabel || `${opp.probability || 0}%` }}</td>
+                <td><span class="progress-pill">{{ opp.businessProgressStatus || '新提报' }}</span></td>
+                <td>{{ opp.supplyRegion || '-' }}</td>
+                <td>{{ opp.bidDeadline || opp.closeDate || '-' }}</td>
+                <td style="text-align: right;">
+                  <div style="display: inline-flex; gap: 8px;">
+                    <button class="btn-icon" @click="openEditOpp(opp.id)" title="编辑自己提报的信息" style="width: 32px; height: 32px;">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                    </button>
+                    <button class="btn-icon" @click="handleDelete(opp)" title="删除" style="width: 32px; height: 32px; border-color: var(--danger-light); color: var(--danger);">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              <tr v-if="opportunities.length === 0">
+                <td colspan="10" style="text-align: center; color: var(--text-muted); padding: 32px 0;">没有查找到符合条件的商机提报</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
-    <div class="pagination-wrapper" style="display: flex; justify-content: flex-end; align-items: center; padding: 16px; gap: 16px;">
-      <span style="color: var(--text-muted); font-size: 14px;">共 {{ oppStore.totalElements }} 条数据</span>
-      <div style="display: flex; gap: 8px;">
-        <button class="btn-secondary" :disabled="oppStore.page === 0" @click="prevPage">上一页</button>
-        <span style="display: inline-flex; align-items: center; font-weight: 500;">
-          {{ oppStore.page + 1 }} / {{ Math.max(1, oppStore.totalPages) }}
-        </span>
-        <button class="btn-secondary" :disabled="oppStore.page >= oppStore.totalPages - 1" @click="nextPage">下一页</button>
+        <div class="pagination-wrapper" style="display: flex; justify-content: flex-end; align-items: center; padding: 16px; gap: 16px;">
+          <span style="color: var(--text-muted); font-size: 14px;">共 {{ oppStore.totalElements }} 条数据</span>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn-secondary" :disabled="oppStore.page === 0" @click="prevPage">上一页</button>
+            <span style="display: inline-flex; align-items: center; font-weight: 500;">
+              {{ oppStore.page + 1 }} / {{ Math.max(1, oppStore.totalPages) }}
+            </span>
+            <button class="btn-secondary" :disabled="oppStore.page >= oppStore.totalPages - 1" @click="nextPage">下一页</button>
+          </div>
+        </div>
       </div>
     </div>
 

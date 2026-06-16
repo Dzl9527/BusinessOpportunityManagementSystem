@@ -742,7 +742,7 @@ body {
   position: sticky;
   left: 0;
   z-index: 10;
-  background-color: inherit;
+  background-color: var(--bg-secondary);
   box-shadow: 2px 0 5px -2px rgba(0,0,0,0.1);
 }
 
@@ -751,8 +751,16 @@ body {
   position: sticky;
   right: 0;
   z-index: 10;
-  background-color: inherit;
+  background-color: var(--bg-secondary);
   box-shadow: -2px 0 5px -2px rgba(0,0,0,0.1);
+}
+
+/* Ensure hover state still works for sticky columns */
+.opportunity-table tr:hover th:first-child,
+.opportunity-table tr:hover td:first-child,
+.opportunity-table tr:hover th:last-child,
+.opportunity-table tr:hover td:last-child {
+  background-color: var(--hover-color);
 }
 
 /* To ensure background color applies correctly on sticky cells */
@@ -761,6 +769,24 @@ body {
 }
 .opportunity-table tr:hover {
   background-color: var(--hover-color);
+}
+
+/* Unified Data View Card (Table + Pagination) */
+.data-view-card {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  margin-top: 16px;
+}
+
+.data-view-card .table-container {
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .custom-table th {
