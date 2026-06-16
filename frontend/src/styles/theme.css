@@ -732,6 +732,37 @@ body {
   text-align: left;
 }
 
+/* Frozen columns and horizontal scroll for opportunity table */
+.opportunity-table th, .opportunity-table td {
+  white-space: nowrap;
+}
+
+.opportunity-table th:first-child,
+.opportunity-table td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 10;
+  background-color: inherit;
+  box-shadow: 2px 0 5px -2px rgba(0,0,0,0.1);
+}
+
+.opportunity-table th:last-child,
+.opportunity-table td:last-child {
+  position: sticky;
+  right: 0;
+  z-index: 10;
+  background-color: inherit;
+  box-shadow: -2px 0 5px -2px rgba(0,0,0,0.1);
+}
+
+/* To ensure background color applies correctly on sticky cells */
+.opportunity-table tr {
+  background-color: var(--bg-secondary);
+}
+.opportunity-table tr:hover {
+  background-color: var(--hover-color);
+}
+
 .custom-table th {
   padding: 16px 24px;
   font-weight: 600;
