@@ -597,12 +597,14 @@ const readUiPrefs = () => {
     }
 
     const prevPage = () => {
+      console.log('prevPage clicked, current store page:', oppStore.page)
       if (oppStore.page > 0) {
         oppStore.fetchOpportunities(filters, oppStore.page - 1)
       }
     }
 
     const nextPage = () => {
+      console.log('nextPage clicked, current store page:', oppStore.page, 'totalPages:', oppStore.totalPages)
       if (oppStore.page < oppStore.totalPages - 1) {
         oppStore.fetchOpportunities(filters, oppStore.page + 1)
       }
@@ -671,7 +673,7 @@ const readUiPrefs = () => {
     return {
       oppStore,
       STAGES,
-      opportunities: oppStore.opportunities,
+      opportunities: computed(() => oppStore.opportunities),
       filters,
       filtersExpanded,
       activeFilterCount,
