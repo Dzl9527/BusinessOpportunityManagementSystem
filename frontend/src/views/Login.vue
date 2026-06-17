@@ -6,27 +6,27 @@
       </div>
       
       <h2 style="font-size: 22px; font-weight: 700; margin-bottom: 8px; color: var(--text-primary);">商机宝 CRM</h2>
-      <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 32px;">企业微信生态智能销售商机管理中心</p>
+      <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 32px;">飞书生态智能销售商机管理中心</p>
 
       <!-- SSO Loading state -->
       <div v-if="isAuthenticating" style="display: flex; flex-direction: column; align-items: center; gap: 16px; margin: 20px 0;">
         <div class="loading-spinner"></div>
-        <span style="font-size: 13px; color: var(--text-secondary);">正在对接企业微信安全身份认证，请稍候...</span>
+        <span style="font-size: 13px; color: var(--text-secondary);">正在对接飞书安全身份认证，请稍候...</span>
       </div>
 
       <!-- General Login Choices -->
       <div v-else style="width: 100%; display: flex; flex-direction: column; align-items: center;">
         
         <!-- Mock WeChat QR Container -->
-        <div class="qr-box" @click="handleSandboxLogin" title="点击可直接使用沙箱用户登录">
+        <div class="qr-box" @click="handleFeishuLogin" title="点击跳转飞书安全登录">
           <!-- Stylized mock QR -->
           <div style="width: 160px; height: 160px; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 10px; background: white; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;">
             <svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="#0f172a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-qr-code"><rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16v5a1 1 0 0 1-1 1h-4"/><path d="M21 12v2"/><path d="M12 21v-2"/><path d="M12 12h.01"/><path d="M16 12h.01"/><path d="M21 8v.01"/><path d="M12 16h.01"/><rect width="1" height="1" x="16" y="16"/><rect width="1" height="1" x="8" y="8"/><rect width="1" height="1" x="8" y="16"/></svg>
-            <div style="font-size: 9px; color: #475569; font-weight: bold; margin-top: 6px;">[扫码测试] 点击即可模拟扫码</div>
+            <div style="font-size: 9px; color: #475569; font-weight: bold; margin-top: 6px;">[扫码测试] 点击跳转飞书</div>
           </div>
           <div style="margin-top: 14px; font-size: 13px; color: var(--text-secondary); display: flex; align-items: center; gap: 8px;">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-message-circle"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
-            <span>企业微信扫码安全登录</span>
+            <span>飞书扫码安全登录</span>
           </div>
         </div>
 
@@ -50,11 +50,11 @@
 
         <button class="btn-primary" style="width: 100%; height: 44px; justify-content: center; font-size: 14px;" @click="handleSandboxLogin()">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shield-check"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 11 2 2 4-4"/></svg>
-          <span>进入演示沙箱 (免企微凭证)</span>
+          <span>进入演示沙箱 (免飞书凭证)</span>
         </button>
 
         <p style="font-size: 11px; color: var(--text-muted); margin-top: 16px; line-height: 1.5; padding: 0 10px;">
-          * 说明：本系统已包含“企业微信对接服务”。本地脱机调试可选择不同沙箱账号验证管理员、领导、普通用户权限。
+          * 说明：本系统已包含“飞书对接服务”。本地脱机调试可选择不同沙箱账号验证权限。
         </p>
       </div>
     </div>
@@ -69,6 +69,9 @@ import { useOppStore } from '../stores/useOppStore'
 import { useAppStore } from '../stores/useAppStore'
 import { useUserStore } from '../stores/useUserStore'
 import { useMetricsStore } from '../stores/useMetricsStore'
+
+import axios from 'axios'
+import { API_BASE } from '../stores/useAppStore'
 
 export default {
   setup() {
@@ -92,7 +95,7 @@ const isAuthenticating = ref(false)
     }
 
     onMounted(async () => {
-      // Check if "code" exists in url query params (redirect callback from WeCom OAuth)
+      // Check if "code" exists in url query params (redirect callback from Feishu OAuth)
       const code = route.query.code
       if (code) {
         isAuthenticating.value = true
@@ -107,10 +110,26 @@ const isAuthenticating = ref(false)
       }
     })
 
+    const handleFeishuLogin = async () => {
+      try {
+        const { data } = await axios.get(`${API_BASE}/feishu/config`)
+        if (data && data.appId) {
+          const redirectUri = encodeURIComponent(window.location.origin + '/login')
+          window.location.href = `https://open.feishu.cn/open-apis/authen/v1/authorize?app_id=${data.appId}&redirect_uri=${redirectUri}&state=FEISHU`
+        } else {
+          alert('无法获取飞书应用配置')
+        }
+      } catch (err) {
+        console.error(err)
+        alert('无法连接到服务端获取飞书配置')
+      }
+    }
+
     return {
       isAuthenticating,
       sandboxAccounts,
-      handleSandboxLogin
+      handleSandboxLogin,
+      handleFeishuLogin
     }
   }
 }

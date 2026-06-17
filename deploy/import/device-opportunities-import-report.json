@@ -1,0 +1,173 @@
+{
+  "source": "E:\\下载\\110\\设备事业群商机表-需置顶.xlsx",
+  "sheet": "商机池",
+  "totalRows": 49,
+  "importedRows": 46,
+  "skippedRows": [
+    {
+      "excelRow": 5,
+      "reason": "missing company, name and device type"
+    },
+    {
+      "excelRow": 7,
+      "reason": "missing company, name and device type"
+    },
+    {
+      "excelRow": 8,
+      "reason": "missing company, name and device type"
+    }
+  ],
+  "amountConversionRule": "字段值 > 1000 时按元处理并除以 10000；字段值 <= 1000 时按万元处理。",
+  "amountConversions": [
+    {
+      "excelRow": 6,
+      "field": "estimatedPurchaseAmount",
+      "raw": 30000.0,
+      "convertedWan": 3.0
+    },
+    {
+      "excelRow": 10,
+      "field": "winningAmount",
+      "raw": 20000.0,
+      "convertedWan": 2.0
+    },
+    {
+      "excelRow": 17,
+      "field": "estimatedPurchaseAmount",
+      "raw": 38000.0,
+      "convertedWan": 3.8
+    },
+    {
+      "excelRow": 18,
+      "field": "estimatedPurchaseAmount",
+      "raw": 50000.0,
+      "convertedWan": 5.0
+    },
+    {
+      "excelRow": 21,
+      "field": "estimatedPurchaseAmount",
+      "raw": 30000.0,
+      "convertedWan": 3.0
+    },
+    {
+      "excelRow": 22,
+      "field": "estimatedPurchaseAmount",
+      "raw": 50000.0,
+      "convertedWan": 5.0
+    },
+    {
+      "excelRow": 23,
+      "field": "estimatedPurchaseAmount",
+      "raw": 120000.0,
+      "convertedWan": 12.0
+    },
+    {
+      "excelRow": 25,
+      "field": "estimatedPurchaseAmount",
+      "raw": 13000.0,
+      "convertedWan": 1.3
+    },
+    {
+      "excelRow": 26,
+      "field": "estimatedPurchaseAmount",
+      "raw": 10000.0,
+      "convertedWan": 1.0
+    },
+    {
+      "excelRow": 27,
+      "field": "estimatedPurchaseAmount",
+      "raw": 52000.0,
+      "convertedWan": 5.2
+    },
+    {
+      "excelRow": 29,
+      "field": "estimatedPurchaseAmount",
+      "raw": 13000.0,
+      "convertedWan": 1.3
+    },
+    {
+      "excelRow": 30,
+      "field": "estimatedPurchaseAmount",
+      "raw": 20000.0,
+      "convertedWan": 2.0
+    },
+    {
+      "excelRow": 31,
+      "field": "estimatedPurchaseAmount",
+      "raw": 13000.0,
+      "convertedWan": 1.3
+    },
+    {
+      "excelRow": 35,
+      "field": "estimatedPurchaseAmount",
+      "raw": 300000.0,
+      "convertedWan": 30.0
+    },
+    {
+      "excelRow": 36,
+      "field": "estimatedPurchaseAmount",
+      "raw": 49000.0,
+      "convertedWan": 4.9
+    },
+    {
+      "excelRow": 38,
+      "field": "estimatedPurchaseAmount",
+      "raw": 26000.0,
+      "convertedWan": 2.6
+    },
+    {
+      "excelRow": 39,
+      "field": "estimatedPurchaseAmount",
+      "raw": 120000.0,
+      "convertedWan": 12.0
+    },
+    {
+      "excelRow": 40,
+      "field": "estimatedPurchaseAmount",
+      "raw": 20000.0,
+      "convertedWan": 2.0
+    },
+    {
+      "excelRow": 42,
+      "field": "estimatedPurchaseAmount",
+      "raw": 10000.0,
+      "convertedWan": 1.0
+    },
+    {
+      "excelRow": 43,
+      "field": "estimatedPurchaseAmount",
+      "raw": 1500000.0,
+      "convertedWan": 150.0
+    },
+    {
+      "excelRow": 45,
+      "field": "estimatedPurchaseAmount",
+      "raw": 13000.0,
+      "convertedWan": 1.3
+    },
+    {
+      "excelRow": 46,
+      "field": "estimatedPurchaseAmount",
+      "raw": 115000.0,
+      "convertedWan": 11.5
+    },
+    {
+      "excelRow": 47,
+      "field": "estimatedPurchaseAmount",
+      "raw": 900000.0,
+      "convertedWan": 90.0
+    },
+    {
+      "excelRow": 49,
+      "field": "estimatedPurchaseAmount",
+      "raw": 13000.0,
+      "convertedWan": 1.3
+    },
+    {
+      "excelRow": 50,
+      "field": "estimatedPurchaseAmount",
+      "raw": 13000.0,
+      "convertedWan": 1.3
+    }
+  ]
+}

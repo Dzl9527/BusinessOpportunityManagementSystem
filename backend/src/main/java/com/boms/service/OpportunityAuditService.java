@@ -72,7 +72,7 @@ public class OpportunityAuditService {
                 FieldSnapshot field = AUDITED_FIELDS.get(entry.getKey());
                 OpportunityChangeLog log = new OpportunityChangeLog(
                         opp,
-                        editor != null ? editor.getWecomUserId() : null,
+                        editor != null ? editor.getPlatformUserId() : null,
                         editor != null ? editor.getName() : null,
                         now(),
                         entry.getKey(),

@@ -33,9 +33,9 @@ public class OpportunityReminderService {
     private SystemConfigRepository configRepository;
 
     @Autowired
-    private WeComService weComService;
+    private FeishuService feishuService;
 
-    @Value("${wecom.redirect-uri:http://localhost:5173/login-callback}")
+    @Value("${feishu.redirect-uri:http://localhost:5173/login-callback}")
     private String redirectUri;
 
     /**
@@ -283,7 +283,7 @@ public class OpportunityReminderService {
         String now = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
         OpportunityReminder reminder = new OpportunityReminder(type, targetUser, content, now, "已发送", now, opp);
         opp.getReminders().add(reminder);
-        weComService.sendAppMessage(targetUser, content);
+        feishuService.sendAppMessage(targetUser, content);
         oppRepository.save(opp);
     }
 }

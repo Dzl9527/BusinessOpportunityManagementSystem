@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import axios from 'axios'
 import { API_BASE, useAppStore } from './useAppStore'
+import { useAuthStore } from './useAuthStore'
 
 export const useUserStore = defineStore('user', () => {
   const contacts = ref<any[]>([])
@@ -9,10 +10,18 @@ export const useUserStore = defineStore('user', () => {
 
   const fetchContacts = async () => {
     try {
-      const response = await axios.get(`${API_BASE}/wecom/contacts`)
+      const authStore = useAuthStore()
+      const response = await axios.post(`${API_BASE}/users/sync-platform`, null, {
+        params: {
+          adminUserId: authStore.user?.userId,
+          adminName: authStore.user?.name
+        }
+      })
       contacts.value = response.data
+      users.value = response.data
     } catch (e) {
       console.error('Failed to fetch contacts', e)
+      throw e
     }
   }
 
@@ -27,36 +36,43 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  const syncWeComUsers = async () => {
+  const syncFeishuUsers = async () => {
     const appStore = useAppStore()
+    const authStore = useAuthStore()
     try {
-      const response = await axios.post(`${API_BASE}/users/sync-wecom`)
+      const response = await axios.post(`${API_BASE}/users/sync-platform`, null, {
+        params: {
+          adminUserId: authStore.user?.userId,
+          adminName: authStore.user?.name
+        }
+      })
       users.value = response.data
-      appStore.showToast('企业微信用户同步完成', 'success')
+      contacts.value = response.data
+      appStore.showToast('飞书用户同步完成', 'success')
     } catch (e) {
       console.error('Failed to sync users', e)
-      appStore.showToast('企业微信用户同步失败', 'error')
+      appStore.showToast('飞书用户同步失败', 'error')
     }
   }
 
-  const updateUserRole = async (wecomUserId: string, payload: any) => {
-    await axios.put(`${API_BASE}/users/${wecomUserId}/role`, payload)
+  const updateUserRole = async (platformUserId: string, payload: any) => {
+    await axios.put(`${API_BASE}/users/${platformUserId}/role`, payload)
     await fetchUsers()
   }
 
-  const updateUserEnabled = async (wecomUserId: string, enabled: boolean) => {
-    await axios.put(`${API_BASE}/users/${wecomUserId}/enabled`, { enabled })
+  const updateUserEnabled = async (platformUserId: string, enabled: boolean) => {
+    await axios.put(`${API_BASE}/users/${platformUserId}/enabled`, { enabled })
     await fetchUsers()
   }
 
-  const fetchVisibilityRules = async (wecomUserId: string) => {
-    const response = await axios.get(`${API_BASE}/users/${wecomUserId}/visibility-rules`)
+  const fetchVisibilityRules = async (platformUserId: string) => {
+    const response = await axios.get(`${API_BASE}/users/${platformUserId}/visibility-rules`)
     return response.data
   }
 
-  const saveVisibilityRules = async (wecomUserId: string, visibleUserIds: string[]) => {
+  const saveVisibilityRules = async (platformUserId: string, visibleUserIds: string[]) => {
     const appStore = useAppStore()
-    const response = await axios.put(`${API_BASE}/users/${wecomUserId}/visibility-rules`, { visibleUserIds })
+    const response = await axios.put(`${API_BASE}/users/${platformUserId}/visibility-rules`, { visibleUserIds })
     appStore.showToast('白名单已保存', 'success')
     return response.data
   }
@@ -66,7 +82,7 @@ export const useUserStore = defineStore('user', () => {
     users,
     fetchContacts,
     fetchUsers,
-    syncWeComUsers,
+    syncFeishuUsers,
     updateUserRole,
     updateUserEnabled,
     fetchVisibilityRules,

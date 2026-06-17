@@ -112,7 +112,7 @@ export const useOppStore = defineStore('opportunity', () => {
     try {
       await axios.post(`${API_BASE}/opportunities/submissions`, oppData)
       if (getUiPrefs().showSubmitToast !== false) {
-        appStore.showToast('商机提报已提交，并已生成企业微信提醒', 'success')
+        appStore.showToast('商机提报已提交，并已生成飞书提醒', 'success')
       }
       await fetchMyOpportunities()
       await metricsStore.fetchMetrics()

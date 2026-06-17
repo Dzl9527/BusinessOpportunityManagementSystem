@@ -29,7 +29,7 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/wecom/auth", "/api/wecom/jssdk-config", "/h2-console/**").permitAll()
+                .requestMatchers("/api/feishu/auth", "/api/feishu/config", "/api/wecom/auth", "/h2-console/**").permitAll()
                 .anyRequest().authenticated()
             )
             // Allow H2 console frames

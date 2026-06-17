@@ -11,7 +11,7 @@ import com.boms.repository.OpportunityRepository;
 import com.boms.service.OpportunityAuditService;
 import com.boms.service.OpportunityPermissionService;
 import com.boms.service.UserDirectoryService;
-import com.boms.service.WeComService;
+import com.boms.service.FeishuService;
 import com.boms.service.OpportunityReminderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
@@ -43,7 +43,7 @@ public class OpportunityController {
     private OpportunityRepository oppRepository;
 
     @Autowired
-    private WeComService weComService;
+    private FeishuService feishuService;
 
     @Autowired
     private UserDirectoryService userDirectoryService;
@@ -280,15 +280,15 @@ public class OpportunityController {
             return;
         }
         if (creating || opp.getCreatorUserId() == null || opp.getCreatorUserId().isBlank()) {
-            opp.setCreatorUserId(user.getWecomUserId());
+            opp.setCreatorUserId(user.getPlatformUserId());
             opp.setCreatorName(user.getName());
         }
         if (opp.getSubmitterUserId() == null || opp.getSubmitterUserId().isBlank()) {
-            opp.setSubmitterUserId(user.getWecomUserId());
+            opp.setSubmitterUserId(user.getPlatformUserId());
             opp.setSubmitterName(user.getName());
         }
         if (opp.getOwnerUserId() == null || opp.getOwnerUserId().isBlank()) {
-            opp.setOwnerUserId(user.getWecomUserId());
+            opp.setOwnerUserId(user.getPlatformUserId());
             opp.setOwnerName(user.getName());
         }
         if (opp.getCreatorName() == null || opp.getCreatorName().isBlank()) {
@@ -399,7 +399,7 @@ public class OpportunityController {
         String content = String.format("商机提报成功\n项目名称：%s\n采购单位：%s\n业务进度：%s\n请按计划持续更新项目进展。",
                 opp.getName(), opp.getCompany(), opp.getBusinessProgressStatus());
         opp.getReminders().add(buildReminder(opp, "提报成功", userId, content));
-        weComService.sendAppMessage(userId, content);
+        feishuService.sendAppMessage(userId, content);
 
         if (opp.getBidDeadline() != null && !opp.getBidDeadline().isBlank()) {
             String bidContent = String.format("投标截止提醒\n项目名称：%s\n截止时间：%s\n请及时更新投标准备和中标结果。",
@@ -785,7 +785,7 @@ public class OpportunityController {
             String content = body.getOrDefault("content", "请及时跟进商机：" + opp.getName());
             OpportunityReminder reminder = buildReminder(opp, body.getOrDefault("reminderType", "手动提醒"), target, content);
             opp.getReminders().add(reminder);
-            weComService.sendAppMessage(target, content);
+            feishuService.sendAppMessage(target, content);
             oppRepository.save(opp);
             return ResponseEntity.ok(reminder);
         }).orElse(ResponseEntity.notFound().build());

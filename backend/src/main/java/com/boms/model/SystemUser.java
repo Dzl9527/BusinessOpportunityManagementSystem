@@ -10,10 +10,13 @@ public class SystemUser {
     private Long id;
 
     @Column(nullable = false, unique = true, length = 100)
-    private String wecomUserId;
+    private String platformUserId;
 
     @Column(nullable = false, length = 100)
     private String name;
+
+    @Column(length = 500)
+    private String avatarUrl;
 
     private String mobile;
     private String email;
@@ -40,12 +43,12 @@ public class SystemUser {
         this.id = id;
     }
 
-    public String getWecomUserId() {
-        return wecomUserId;
+    public String getPlatformUserId() {
+        return platformUserId;
     }
 
-    public void setWecomUserId(String wecomUserId) {
-        this.wecomUserId = wecomUserId;
+    public void setPlatformUserId(String platformUserId) {
+        this.platformUserId = platformUserId;
     }
 
     public String getName() {
@@ -54,6 +57,14 @@ public class SystemUser {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getAvatarUrl() {
+        return avatarUrl;
+    }
+
+    public void setAvatarUrl(String avatarUrl) {
+        this.avatarUrl = avatarUrl;
     }
 
     public String getMobile() {

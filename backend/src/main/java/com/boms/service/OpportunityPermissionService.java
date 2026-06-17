@@ -1,45 +1,67 @@
 package com.boms.service;
 
 import com.boms.model.Opportunity;
+import com.boms.model.SystemDepartment;
 import com.boms.model.SystemUser;
-import com.boms.model.UserVisibilityRule;
-import com.boms.repository.UserVisibilityRuleRepository;
+import com.boms.repository.SystemDepartmentRepository;
+import com.boms.repository.SystemUserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 public class OpportunityPermissionService {
+
     @Autowired
-    private UserVisibilityRuleRepository visibilityRuleRepository;
+    private SystemDepartmentRepository departmentRepository;
+
+    @Autowired
+    private SystemUserRepository userRepository;
 
     public Set<String> getVisibleUserIds(SystemUser user) {
         Set<String> ids = new HashSet<>();
-        if (user == null || user.getWecomUserId() == null) {
+        if (user == null || user.getPlatformUserId() == null) {
             return ids;
         }
-        ids.add(user.getWecomUserId());
-        for (UserVisibilityRule rule : visibilityRuleRepository.findByViewerUserIdAndCanViewTrue(user.getWecomUserId())) {
-            ids.add(rule.getVisibleUserId());
+        ids.add(user.getPlatformUserId());
+        
+        // Find all departments where user is leader
+        List<SystemDepartment> allDepts = departmentRepository.findAll();
+        Set<String> leaderOfDeptIds = new HashSet<>();
+        for (SystemDepartment dept : allDepts) {
+            if (user.getPlatformUserId().equals(dept.getLeaderUserId())) {
+                leaderOfDeptIds.add(dept.getDepartmentId());
+            }
+        }
+        
+        if (!leaderOfDeptIds.isEmpty()) {
+            Set<String> subordinateDeptIds = new HashSet<>(leaderOfDeptIds);
+            boolean added = true;
+            while (added) {
+                added = false;
+                for (SystemDepartment dept : allDepts) {
+                    if (subordinateDeptIds.contains(dept.getParentId()) && !subordinateDeptIds.contains(dept.getDepartmentId())) {
+                        subordinateDeptIds.add(dept.getDepartmentId());
+                        added = true;
+                    }
+                }
+            }
+            
+            List<SystemUser> allUsers = userRepository.findAll();
+            for (SystemUser subordinate : allUsers) {
+                if (subordinateDeptIds.contains(subordinate.getDepartmentId())) {
+                    ids.add(subordinate.getPlatformUserId());
+                }
+            }
         }
         return ids;
     }
 
     public Set<String> getEditableUserIds(SystemUser user) {
-        Set<String> ids = new HashSet<>();
-        if (user == null || user.getWecomUserId() == null) {
-            return ids;
-        }
-        ids.add(user.getWecomUserId());
-        for (UserVisibilityRule rule : visibilityRuleRepository.findByViewerUserIdAndCanEditTrue(user.getWecomUserId())) {
-            ids.add(rule.getVisibleUserId());
-        }
-        return ids;
+        // By default, editable equals visible in this new model, or just self + admins
+        return getVisibleUserIds(user);
     }
 
     public boolean canView(SystemUser user, Opportunity opp) {
@@ -73,13 +95,13 @@ public class OpportunityPermissionService {
             return "ADMIN";
         }
         Set<String> self = new HashSet<>();
-        if (user != null && user.getWecomUserId() != null) {
-            self.add(user.getWecomUserId());
+        if (user != null && user.getPlatformUserId() != null) {
+            self.add(user.getPlatformUserId());
         }
         if (belongsToAny(opp, self)) {
             return "SELF";
         }
-        return "WHITELIST";
+        return "ORGANIZATION_TREE";
     }
 
     public List<Opportunity> filterVisible(SystemUser user, List<Opportunity> opportunities) {

@@ -49,7 +49,10 @@
       </nav>
 
       <div class="sidebar-footer">
-        <div class="avatar">{{ userInitial }}</div>
+        <div class="avatar" v-if="user.avatarUrl">
+          <img :src="user.avatarUrl" :alt="user.name" style="width: 100%; height: 100%; object-fit: cover;" />
+        </div>
+        <div class="avatar" v-else>{{ userInitial }}</div>
         <div class="user-info">
           <span class="user-name">{{ user.name }}</span>
           <span class="user-role">{{ userRoleLabel }}</span>
@@ -89,7 +92,10 @@
         <aside class="workspace-rail">
           <div class="rail-profile-card">
             <div class="rail-profile-top">
-              <div class="rail-profile-avatar">{{ userInitial }}</div>
+              <div class="rail-profile-avatar" v-if="user.avatarUrl">
+                <img :src="user.avatarUrl" :alt="user.name" style="width: 100%; height: 100%; object-fit: cover;" />
+              </div>
+              <div class="rail-profile-avatar" v-else>{{ userInitial }}</div>
               <div>
                 <strong>{{ user.name }}</strong>
                 <span>{{ userRoleLabel }}</span>
@@ -170,7 +176,7 @@ export default {
       List: '通过折叠筛选和搜索快速定位目标商机。',
       Kanban: '按阶段推进商机，随时掌握当前项目状态。',
       UserCenter: '查看个人资料、权限范围与登录状态。',
-      Users: '维护企业微信用户、角色和白名单范围。',
+      Users: '维护飞书用户、角色和白名单范围。',
       Settings: '统一处理系统联调、用户权限、通知和数据维护。'
     }
 

@@ -1,7 +1,7 @@
 <template>
   <section class="content-panel users-panel">
     <div style="display: flex; justify-content: flex-end; margin-bottom: 16px;">
-      <button class="btn-primary" @click="syncUsers">同步企业微信用户</button>
+      <button class="btn-primary" @click="syncUsers">同步飞书用户</button>
     </div>
 
     <div class="admin-mobile-layout">
@@ -14,21 +14,27 @@
         <div class="admin-user-list">
           <button
             v-for="item in users"
-            :key="item.wecomUserId"
+            :key="item.platformUserId"
             type="button"
             class="admin-user-card"
-            :class="{ active: selectedUser?.wecomUserId === item.wecomUserId }"
+            :class="{ active: selectedUser?.platformUserId === item.platformUserId }"
             @click="selectUser(item)"
           >
-            <div class="admin-user-card-top">
-              <div>
+            <div class="admin-user-card-top" style="align-items: center; gap: 12px;">
+              <div class="org-user-avatar" style="width: 32px; height: 32px; flex-shrink: 0;" v-if="item.avatarUrl">
+                <img :src="item.avatarUrl" :alt="item.name" style="width: 100%; height: 100%; object-fit: cover;" />
+              </div>
+              <div class="org-user-avatar" style="width: 32px; height: 32px; flex-shrink: 0;" v-else>
+                <span>{{ item.name.slice(0, 1) }}</span>
+              </div>
+              <div style="flex: 1; text-align: left;">
                 <strong>{{ item.name }}</strong>
                 <p>{{ item.departmentName || '未同步部门' }}</p>
               </div>
               <span class="role-chip">{{ roleText(item.role) }}</span>
             </div>
             <div class="admin-user-card-meta">
-              <span>{{ item.wecomUserId }}</span>
+              <span>{{ item.platformUserId }}</span>
               <span>{{ item.position || '未填写职位' }}</span>
             </div>
             <div class="admin-user-card-status">
@@ -47,10 +53,16 @@
         </div>
 
         <template v-if="selectedUser">
-          <div class="selected-user-summary">
-            <div>
-              <strong>{{ selectedUser.name }}</strong>
-              <span>{{ selectedUser.wecomUserId }}</span>
+          <div class="selected-user-summary" style="display: flex; align-items: center; gap: 16px;">
+            <div class="org-user-avatar" style="width: 48px; height: 48px; flex-shrink: 0;" v-if="selectedUser.avatarUrl">
+              <img :src="selectedUser.avatarUrl" :alt="selectedUser.name" style="width: 100%; height: 100%; object-fit: cover;" />
+            </div>
+            <div class="org-user-avatar" style="width: 48px; height: 48px; flex-shrink: 0; font-size: 20px;" v-else>
+              <span>{{ selectedUser.name.slice(0, 1) }}</span>
+            </div>
+            <div style="flex: 1;">
+              <strong style="display: block; font-size: 18px; margin-bottom: 4px;">{{ selectedUser.name }}</strong>
+              <span style="color: var(--secondary-text);">{{ selectedUser.platformUserId }}</span>
             </div>
             <span :class="['status-pill', selectedUser.enabled ? 'enabled' : 'disabled']">{{ selectedUser.enabled ? '启用中' : '已禁用' }}</span>
           </div>
@@ -82,10 +94,10 @@
             </div>
 
             <div class="whitelist-chip-list">
-              <label v-for="item in selectableUsers" :key="item.wecomUserId" class="whitelist-chip" :class="{ active: visibleUserIds.includes(item.wecomUserId) }">
-                <input type="checkbox" :value="item.wecomUserId" v-model="visibleUserIds">
+              <label v-for="item in selectableUsers" :key="item.platformUserId" class="whitelist-chip" :class="{ active: visibleUserIds.includes(item.platformUserId) }">
+                <input type="checkbox" :value="item.platformUserId" v-model="visibleUserIds">
                 <strong>{{ item.name }}</strong>
-                <small>{{ item.wecomUserId }}</small>
+                <small>{{ item.platformUserId }}</small>
               </label>
             </div>
 
@@ -115,7 +127,7 @@ export default {
 const selectedUser = ref(null)
     const visibleUserIds = ref([])
     const users = computed(() => userStore.users)
-    const selectableUsers = computed(() => users.value.filter(item => item.wecomUserId !== selectedUser.value?.wecomUserId))
+    const selectableUsers = computed(() => users.value.filter(item => item.platformUserId !== selectedUser.value?.platformUserId))
 
     const roleText = (role) => {
       if (role === 'ADMIN') return '管理员'
@@ -124,20 +136,20 @@ const selectedUser = ref(null)
     }
 
     const syncUsers = async () => {
-      await userStore.syncWeComUsers()
+      await userStore.syncFeishuUsers()
     }
 
     const changeRole = async (user, role) => {
-      await userStore.updateUserRole(user.wecomUserId, { role, canViewAll: role === 'ADMIN' })
-      const latest = userStore.users.find(item => item.wecomUserId === user.wecomUserId)
+      await userStore.updateUserRole(user.platformUserId, { role, canViewAll: role === 'ADMIN' })
+      const latest = userStore.users.find(item => item.platformUserId === user.platformUserId)
       if (latest) {
         selectedUser.value = latest
       }
     }
 
     const toggleEnabled = async (user) => {
-      await userStore.updateUserEnabled(user.wecomUserId, !user.enabled)
-      const latest = userStore.users.find(item => item.wecomUserId === user.wecomUserId)
+      await userStore.updateUserEnabled(user.platformUserId, !user.enabled)
+      const latest = userStore.users.find(item => item.platformUserId === user.platformUserId)
       if (latest) {
         selectedUser.value = latest
       }
@@ -145,13 +157,13 @@ const selectedUser = ref(null)
 
     const selectUser = async (user) => {
       selectedUser.value = user
-      const rules = await userStore.fetchVisibilityRules(user.wecomUserId)
+      const rules = await userStore.fetchVisibilityRules(user.platformUserId)
       visibleUserIds.value = rules.map(rule => rule.visibleUserId)
     }
 
     const saveRules = async () => {
       if (!selectedUser.value) return
-      await userStore.saveVisibilityRules(selectedUser.value.wecomUserId, visibleUserIds.value)
+      await userStore.saveVisibilityRules(selectedUser.value.platformUserId, visibleUserIds.value)
     }
 
     onMounted(async () => {

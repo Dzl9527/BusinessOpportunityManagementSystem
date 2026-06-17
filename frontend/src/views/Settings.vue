@@ -4,8 +4,8 @@
       <button 
         type="button" 
         class="tab-btn" 
-        :class="{ active: activeTab === 'wecom' }" 
-        @click="activeTab = 'wecom'"
+        :class="{ active: activeTab === 'feishu' }" 
+        @click="activeTab = 'feishu'"
       >
         基础对接
       </button>
@@ -36,26 +36,22 @@
     </nav>
 
     <div class="settings-tab-content">
-      <!-- TAB: WeCom -->
-      <div v-if="activeTab === 'wecom'" class="settings-single-grid">
+      <!-- TAB: Feishu -->
+      <div v-if="activeTab === 'feishu'" class="settings-single-grid">
         <section class="admin-mobile-panel">
           <div class="panel-heading">
-            <h3>企业微信配置</h3>
-            <p>维护本地调试用的企微参数，并执行通讯录同步。</p>
+            <h3>飞书配置</h3>
+            <p>维护本地调试用的飞书参数，并执行通讯录同步。</p>
           </div>
 
           <div class="admin-form-stack">
             <div class="admin-setting-card">
-              <span>企业 ID (CorpID)</span>
-              <input type="text" class="form-control" v-model="wecomConfig.corpId">
+              <span>App ID</span>
+              <input type="text" class="form-control" v-model="feishuConfig.appId">
             </div>
             <div class="admin-setting-card">
-              <span>自建应用 AgentID</span>
-              <input type="text" class="form-control" v-model="wecomConfig.agentId">
-            </div>
-            <div class="admin-setting-card">
-              <span>应用凭证 Secret</span>
-              <input type="password" class="form-control" v-model="wecomConfig.secret">
+              <span>App Secret</span>
+              <input type="password" class="form-control" v-model="feishuConfig.appSecret">
             </div>
             <div class="admin-setting-card">
               <span>最近通讯录同步</span>
@@ -64,9 +60,9 @@
           </div>
 
           <div class="stacked-actions">
-            <button class="btn-primary full-width" @click="saveWecomSettings">保存企微配置</button>
-            <button class="btn-secondary full-width" @click="syncWecomContacts" :disabled="isSyncing">
-              {{ isSyncing ? '同步中...' : '同步企微通讯录' }}
+            <button class="btn-primary full-width" @click="saveFeishuSettings">保存飞书配置</button>
+            <button class="btn-secondary full-width" @click="syncFeishuContacts" :disabled="isSyncing">
+              {{ isSyncing ? '同步中...' : '同步飞书通讯录' }}
             </button>
           </div>
         </section>
@@ -166,7 +162,7 @@
             <article class="settings-overview-card">
               <span>启用账号</span>
               <strong>{{ enabledUsersCount }}</strong>
-              <p>当前允许登录系统的企业微信账号数量</p>
+              <p>当前允许登录系统的飞书账号数量</p>
             </article>
             <article class="settings-overview-card">
               <span>管理员账号</span>
@@ -176,7 +172,7 @@
             <article class="settings-overview-card">
               <span>通讯录人数</span>
               <strong>{{ contactCount }}</strong>
-              <p>最近一次同步到前端的企业微信联系人</p>
+              <p>最近一次同步到前端的飞书联系人</p>
             </article>
           </div>
 
@@ -201,6 +197,18 @@
               </p>
             </div>
           </div>
+
+          <div class="panel-heading" style="margin-top: 32px; border-top: 1px solid var(--border-color); padding-top: 24px;">
+            <h3>组织架构与从属关系</h3>
+            <p>直观查看已同步的飞书组织树结构。管理员可以通过此树状图排查权限的可见性边界。</p>
+          </div>
+          
+          <div style="margin-top: 16px;">
+            <OrgChart :tree-data="orgTreeData" :users="users" />
+            <div v-if="!orgTreeData.length" class="empty-state" style="padding: 24px; text-align: center; background: var(--bg-color); border-radius: 8px; border: 1px solid var(--border-color);">
+              <span style="color: var(--secondary-text); font-size: 14px;">暂无组织架构数据。请先在基础对接中点击「同步飞书通讯录」。</span>
+            </div>
+          </div>
         </section>
       </div>
 
@@ -209,7 +217,7 @@
         <section class="admin-mobile-panel">
           <div class="panel-heading">
             <h3>通知与联调</h3>
-            <p>测试当前账号的企微消息推送能力，并保存当前浏览器的管理偏好。</p>
+            <p>测试当前账号的飞书消息推送能力，并保存当前浏览器的管理偏好。</p>
           </div>
 
           <div class="admin-form-stack">
@@ -248,7 +256,7 @@
 
           <div class="stacked-actions">
             <button class="btn-primary full-width" @click="sendTestPush" :disabled="isPushing">
-              {{ isPushing ? '发送中...' : '测试发送企微消息' }}
+              {{ isPushing ? '发送中...' : '测试发送飞书消息' }}
             </button>
             <button class="btn-secondary full-width" @click="saveUiPrefs">
               保存当前端偏好
@@ -308,9 +316,10 @@
 </template>
 
 <script>
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
+import OrgChart from '../components/OrgChart.vue'
 import { useAuthStore } from '../stores/useAuthStore'
 import { useOppStore } from '../stores/useOppStore'
 import { useAppStore } from '../stores/useAppStore'
@@ -330,6 +339,7 @@ const defaultUiPrefs = () => ({
 const formatNow = () => new Date().toLocaleString('zh-CN', { hour12: false })
 
 export default {
+  components: { OrgChart },
   setup() {
     const router = useRouter()
         const authStore = useAuthStore()
@@ -337,7 +347,7 @@ export default {
     const appStore = useAppStore()
     const userStore = useUserStore()
     const metricsStore = useMetricsStore()
-const activeTab = ref('wecom')
+const activeTab = ref('feishu')
     const isSyncing = ref(false)
     const isPushing = ref(false)
     const isSavingConfig = ref(false)
@@ -443,10 +453,45 @@ const activeTab = ref('wecom')
       ...savedPrefs
     })
 
-    const wecomConfig = reactive({
-      corpId: localStorage.getItem('wecom_corp_id') || 'wwdemo1234567890',
-      agentId: localStorage.getItem('wecom_agent_id') || '1000002',
-      secret: localStorage.getItem('wecom_secret') || '••••••••••••••••••••••••••••••••'
+    const feishuConfig = reactive({
+      appId: localStorage.getItem('feishu_app_id') || 'cli_aa930a532a78dcbb',
+      appSecret: localStorage.getItem('feishu_app_secret') || 'ApUwfVXA5fAvi2FSvleGLgq2sICGCgaf'
+    })
+
+    const departments = ref([])
+    const fetchDepartments = async () => {
+      try {
+        const response = await axios.get(`${API_BASE}/departments`, {
+          params: { adminUserId: authStore.user?.userId, adminName: authStore.user?.name }
+        })
+        departments.value = response.data || []
+      } catch (e) {
+        console.error('获取部门失败', e)
+      }
+    }
+
+    const orgTreeData = computed(() => {
+      const depts = departments.value
+      const map = {}
+      depts.forEach(d => {
+        map[d.departmentId] = { ...d, children: [] }
+      })
+      const roots = []
+      depts.forEach(d => {
+        if (d.parentId && map[d.parentId] && d.parentId !== '0') {
+          map[d.parentId].children.push(map[d.departmentId])
+        } else {
+          roots.push(map[d.departmentId])
+        }
+      })
+      return roots
+    })
+
+    watch(activeTab, (val) => {
+      if (val === 'auth') {
+        userStore.fetchUsers()
+        fetchDepartments()
+      }
     })
 
     const users = computed(() => userStore.users || [])
@@ -476,20 +521,20 @@ const activeTab = ref('wecom')
       showToast('当前端偏好已保存，仅对本浏览器生效', 'success')
     }
 
-    const saveWecomSettings = () => {
-      localStorage.setItem('wecom_corp_id', wecomConfig.corpId)
-      localStorage.setItem('wecom_agent_id', wecomConfig.agentId)
-      localStorage.setItem('wecom_secret', wecomConfig.secret)
-      updateSyncSummary('已保存企业微信本地配置')
-      showToast('企业微信配置保存成功！(生产部署需要在后端 application.yml 重新载入生效)', 'success')
+    const saveFeishuSettings = () => {
+      localStorage.setItem('feishu_app_id', feishuConfig.appId)
+      localStorage.setItem('feishu_app_secret', feishuConfig.appSecret)
+      updateSyncSummary('已保存飞书本地配置')
+      showToast('飞书配置保存成功！(生产部署需要在后端 application.yml 重新载入生效)', 'success')
     }
 
-    const syncWecomContacts = async () => {
+    const syncFeishuContacts = async () => {
       isSyncing.value = true
       try {
         await userStore.fetchContacts()
-        updateSyncSummary(`已同步 ${userStore.contacts?.length || 0} 位企业微信联系人`)
-        showToast(`企微通讯录同步成功！已成功加载 ${userStore.contacts?.length || 0} 名销售人员。`, 'success')
+        await fetchDepartments()
+        updateSyncSummary(`已同步 ${userStore.contacts?.length || 0} 位飞书联系人`)
+        showToast(`飞书通讯录同步成功！已成功加载 ${userStore.contacts?.length || 0} 名人员。`, 'success')
       } catch (err) {
         showToast('同步通讯录失败', 'error')
       } finally {
@@ -501,11 +546,11 @@ const activeTab = ref('wecom')
       if (!testMsg.value.trim()) return
       isPushing.value = true
       try {
-        const response = await axios.post(`${API_BASE}/wecom/push-test`, {
+        const response = await axios.post(`${API_BASE}/feishu/push-test`, {
           content: testMsg.value.trim()
         })
         if (response.data.success) {
-          updateSyncSummary('已执行企业微信消息联调')
+          updateSyncSummary('已执行飞书消息联调')
           showToast(response.data.message, 'success')
         } else {
           showToast(response.data.message, 'error')
@@ -523,7 +568,7 @@ const activeTab = ref('wecom')
         userName: authStore.user?.name || ''
       })
       updateDataAction('已发起数据导出请求')
-      window.location.href = `${API_BASE}/wecom/export?${params.toString()}`
+      window.location.href = `${API_BASE}/feishu/export?${params.toString()}`
       showToast('数据下载请求已发送', 'success')
     }
 
@@ -535,7 +580,7 @@ const activeTab = ref('wecom')
       reader.onload = async (evt) => {
         try {
           const json = JSON.parse(evt.target.result)
-          const response = await axios.post(`${API_BASE}/wecom/import`, json, {
+          const response = await axios.post(`${API_BASE}/feishu/import`, json, {
             params: { userId: authStore.user?.userId, userName: authStore.user?.name }
           })
           if (response.data.success) {
@@ -665,7 +710,7 @@ const activeTab = ref('wecom')
             }
           ]
 
-          const response = await axios.post(`${API_BASE}/wecom/import`, defaultMocks, {
+          const response = await axios.post(`${API_BASE}/feishu/import`, defaultMocks, {
             params: { userId: authStore.user?.userId, userName: authStore.user?.name }
           })
           if (response.data.success) {
@@ -690,7 +735,7 @@ const activeTab = ref('wecom')
     })
 
     return {
-      wecomConfig,
+      feishuConfig,
       uiPrefs,
       testMsg,
       isSyncing,
@@ -705,8 +750,8 @@ const activeTab = ref('wecom')
       currentAdminId,
       goUsers,
       saveUiPrefs,
-      saveWecomSettings,
-      syncWecomContacts,
+      saveFeishuSettings,
+      syncFeishuContacts,
       sendTestPush,
       handleExport,
       handleImport,
@@ -717,7 +762,8 @@ const activeTab = ref('wecom')
       isScanning,
       saveReminderSettings,
       triggerReminderScan,
-      activeTab
+      activeTab,
+      orgTreeData
     }
   }
 }

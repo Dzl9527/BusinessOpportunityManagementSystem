@@ -159,7 +159,7 @@
           </div>
           <div class="modal-footer">
             <button type="button" class="btn-secondary" @click="createModalVisible = false">取消</button>
-            <button type="submit" class="btn-primary">保存并指派企微</button>
+            <button type="submit" class="btn-primary">保存并指派飞书</button>
           </div>
         </form>
       </div>

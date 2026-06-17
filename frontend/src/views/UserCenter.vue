@@ -4,7 +4,10 @@
       <div class="user-center-grid">
         <section class="user-card">
           <div class="user-card-header">
-            <div class="user-card-avatar">{{ avatarText }}</div>
+            <div class="user-card-avatar" v-if="user?.avatarUrl">
+              <img :src="user.avatarUrl" :alt="user.name" style="width: 100%; height: 100%; object-fit: cover;" />
+            </div>
+            <div class="user-card-avatar" v-else>{{ avatarText }}</div>
             <div>
               <h2>{{ user?.name || '未登录用户' }}</h2>
               <p>{{ roleLabel }}</p>
@@ -17,7 +20,7 @@
               <strong>{{ user ? '已登录' : '未登录' }}</strong>
             </div>
             <div class="meta-item">
-              <span>企业微信 ID</span>
+              <span>飞书 ID</span>
               <strong>{{ user?.userId || '-' }}</strong>
             </div>
             <div class="meta-item">
@@ -90,8 +93,8 @@
           </article>
           <article class="permission-card">
             <span>登录方式</span>
-            <strong>企业微信沙箱 / 真实 SSO 预留</strong>
-            <p>当前环境支持沙箱身份切换，后续可接入真实企业微信登录。</p>
+            <strong>飞书沙箱 / 真实 SSO 预留</strong>
+            <p>当前环境支持沙箱身份切换，后续可接入真实飞书登录。</p>
           </article>
         </div>
       </section>

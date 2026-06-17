@@ -48,7 +48,7 @@ const routes = [
     path: '/login',
     name: 'Login',
     component: () => import('../views/Login.vue'),
-    meta: { requiresAuth: false, title: '企业微信登录' }
+    meta: { requiresAuth: false, title: '飞书登录' }
   }
 ]
 

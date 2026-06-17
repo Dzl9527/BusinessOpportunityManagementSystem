@@ -9,14 +9,17 @@ export const useAuthStore = defineStore('auth', () => {
   const loginWithCode = async (code: string) => {
     const appStore = useAppStore()
     try {
-      const response = await axios.get(`${API_BASE}/wecom/auth`, { params: { code } })
-      user.value = response.data
-      localStorage.setItem('crm_user', JSON.stringify(response.data))
-      appStore.showToast(`企业微信免登成功，欢迎您，${response.data.name}！`, 'success')
+      const response = await axios.post(`${API_BASE}/feishu/auth`, { code })
+      const { user: userData, token } = response.data
+      // Merge token into user object so Axios interceptor can read it
+      const mergedUser = { ...userData, token }
+      user.value = mergedUser
+      localStorage.setItem('crm_user', JSON.stringify(mergedUser))
+      appStore.showToast(`登录成功，欢迎您，${userData.name}！`, 'success')
       return true
     } catch (e) {
       console.error('SSO Code auth failed', e)
-      appStore.showToast('企业微信登录验证失败，请使用沙箱模拟登录', 'error')
+      appStore.showToast('登录验证失败，请使用沙箱模拟登录', 'error')
       return false
     }
   }

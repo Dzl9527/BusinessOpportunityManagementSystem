@@ -1,7 +1,11 @@
 package com.boms.controller;
 
+import com.boms.model.SystemUser;
+import com.boms.security.JwtTokenProvider;
 import com.boms.service.FeishuService;
+import com.boms.service.UserDirectoryService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -10,32 +14,65 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/feishu")
+@CrossOrigin(origins = "*")
 public class FeishuController {
 
     @Autowired
     private FeishuService feishuService;
 
-    @PostMapping("/push-test")
-    public ResponseEntity<Map<String, Object>> testPush(@RequestBody Map<String, String> payload) {
-        String appId = payload.get("appId");
-        String appSecret = payload.get("appSecret");
-        String targetOpenId = payload.get("targetOpenId");
-        String message = payload.get("message");
+    @Autowired
+    private UserDirectoryService userDirectoryService;
 
-        Map<String, Object> result = new HashMap<>();
-        
-        if (appId == null || appId.trim().isEmpty() || appSecret == null || appSecret.trim().isEmpty() || 
-            targetOpenId == null || targetOpenId.trim().isEmpty() || message == null || message.trim().isEmpty()) {
-            result.put("success", false);
-            result.put("message", "缺少必填参数 (App ID, Secret, Open ID, 测试内容)，请补全后再试");
-            return ResponseEntity.badRequest().body(result);
+    @Autowired
+    private JwtTokenProvider jwtTokenProvider;
+
+    @Value("${feishu.app-id}")
+    private String appId;
+
+    @GetMapping("/config")
+    public Map<String, String> getConfig() {
+        Map<String, String> config = new HashMap<>();
+        config.put("appId", appId);
+        return config;
+    }
+
+    @PostMapping("/auth")
+    public ResponseEntity<Map<String, Object>> auth(@RequestBody Map<String, String> payload) {
+        String code = payload.get("code");
+        if (code == null || code.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "缺少授权码 (code)"));
         }
 
-        boolean success = feishuService.sendTestMessage(appId, appSecret, targetOpenId, message);
+        Map<String, String> userInfo = feishuService.getUserInfoByCode(code);
+        String platformUserId = userInfo.get("userId");
+        if ("fallback_user".equals(platformUserId)) {
+            return ResponseEntity.status(401).body(Map.of("success", false, "message", "登录失败：无法从飞书获取身份信息"));
+        }
+
+        SystemUser user = userDirectoryService.getOrCreateUser(platformUserId, userInfo.get("name"), userInfo.get("avatarUrl"));
         
-        result.put("success", success);
-        result.put("message", success ? "飞书测试消息发送成功！" : "飞书消息发送失败，请检查您的凭证或 Open ID 是否有效");
+        if (!user.isActive()) {
+            return ResponseEntity.status(403).body(Map.of("success", false, "message", "登录失败：账号已被禁用"));
+        }
+
+        String token = jwtTokenProvider.generateToken(user.getPlatformUserId(), user.getName());
         
+        Map<String, Object> userMap = new HashMap<>();
+        userMap.put("userId", user.getPlatformUserId());
+        userMap.put("platformUserId", user.getPlatformUserId());
+        userMap.put("name", user.getName());
+        userMap.put("role", user.getRole());
+        userMap.put("canViewAll", user.getCanViewAll());
+        userMap.put("departmentId", user.getDepartmentId());
+        userMap.put("avatarUrl", user.getAvatarUrl());
+        userMap.put("departmentName", user.getDepartmentName());
+        userMap.put("enabled", user.getEnabled());
+        userMap.put("status", user.getStatus());
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("success", true);
+        result.put("token", token);
+        result.put("user", userMap);
         return ResponseEntity.ok(result);
     }
 }

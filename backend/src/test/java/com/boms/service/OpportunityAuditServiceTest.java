@@ -38,7 +38,7 @@ class OpportunityAuditServiceTest {
         opportunity.setStage("negotiation");
 
         editor = new SystemUser();
-        editor.setWecomUserId("editor123");
+        editor.setPlatformUserId("tester");
         editor.setName("Test Editor");
     }
 

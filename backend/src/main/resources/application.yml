@@ -26,15 +26,10 @@ jwt:
   secret: default_secret_change_me_in_prod_!@#123
   expiration-ms: 86400000 # 24 hours
 
-# Enterprise WeChat (WeCom) Integration Settings
-wecom:
-  # Enterprise ID (CorpID)
-  corp-id: wwdemo1234567890
-  # Application Agent ID
-  agent-id: 1000002
-  # Application Secret
-  secret: secret_demo_1234567890abcdefghijklmnopqrst
-  # OAuth Redirect URL (Base URL of Vue Frontend)
-  redirect-uri: http://localhost:5173/login-callback
-  # Enable real WeCom API integration (true: call WeCom servers, false: sandbox mockup mode)
-  sandbox-mode: true
+# Feishu (Lark) Integration Settings
+feishu:
+  app-id: ${FEISHU_APP_ID:cli_aa930a532a78dcbb}
+  app-secret: ${FEISHU_APP_SECRET:ApUwfVXA5fAvi2FSvleGLgq2sICGCgaf}
+  sandbox-mode: ${FEISHU_SANDBOX_MODE:false}
+  redirect-uri: ${FEISHU_REDIRECT_URI:http://localhost:5173/login-callback}
+

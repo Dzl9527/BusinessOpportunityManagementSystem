@@ -31,7 +31,8 @@ public class UserController {
 
     private String getAdminUserId(String adminUserId) {
         String securityId = com.boms.security.SecurityUtils.getCurrentUserId();
-        return securityId != null ? securityId : "anonymous";
+        if (securityId != null) return securityId;
+        return (adminUserId != null && !adminUserId.trim().isEmpty()) ? adminUserId.trim() : "anonymous";
     }
 
     private String getAdminName(String adminName) {
@@ -39,7 +40,11 @@ public class UserController {
     }
 
     private boolean isAdmin(String adminUserId, String adminName) {
-        SystemUser user = userDirectoryService.getCurrentUser(getAdminUserId(adminUserId), getAdminName(adminName));
+        String resolvedId = getAdminUserId(adminUserId);
+        String resolvedName = getAdminName(adminName);
+        System.out.println("[UserController.isAdmin] resolvedId=" + resolvedId + ", resolvedName=" + resolvedName);
+        SystemUser user = userDirectoryService.getCurrentUser(resolvedId, resolvedName);
+        System.out.println("[UserController.isAdmin] user=" + (user != null ? user.getName() + " role=" + user.getRole() + " active=" + user.isActive() : "null"));
         return user != null && user.isActive() && user.isAdmin();
     }
 
@@ -60,17 +65,17 @@ public class UserController {
         return userDirectoryService.getCurrentUser(securityId, userName);
     }
 
-    @PostMapping("/sync-wecom")
-    public ResponseEntity<List<SystemUser>> syncWeCom(@RequestParam(required = false) String adminUserId,
+    @PostMapping("/sync-platform")
+    public ResponseEntity<List<SystemUser>> syncPlatform(@RequestParam(required = false) String adminUserId,
                                                       @RequestParam(required = false) String adminName) {
         if (!isAdmin(adminUserId, adminName)) {
             return ResponseEntity.status(403).build();
         }
-        return ResponseEntity.ok(userDirectoryService.syncFromWeCom());
+        return ResponseEntity.ok(userDirectoryService.syncFromPlatform());
     }
 
-    @PutMapping("/{wecomUserId}/role")
-    public ResponseEntity<SystemUser> updateRole(@PathVariable String wecomUserId,
+    @PutMapping("/{platformUserId}/role")
+    public ResponseEntity<SystemUser> updateRole(@PathVariable String platformUserId,
                                                  @RequestBody Map<String, Object> body,
                                                  @RequestParam(required = false) String adminUserId,
                                                  @RequestParam(required = false) String adminName) {
@@ -79,11 +84,11 @@ public class UserController {
         }
         String role = String.valueOf(body.getOrDefault("role", "USER"));
         Boolean canViewAll = Boolean.TRUE.equals(body.get("canViewAll"));
-        return ResponseEntity.ok(userDirectoryService.updateRole(wecomUserId, role, canViewAll));
+        return ResponseEntity.ok(userDirectoryService.updateRole(platformUserId, role, canViewAll));
     }
 
-    @PutMapping("/{wecomUserId}/enabled")
-    public ResponseEntity<SystemUser> updateEnabled(@PathVariable String wecomUserId,
+    @PutMapping("/{platformUserId}/enabled")
+    public ResponseEntity<SystemUser> updateEnabled(@PathVariable String platformUserId,
                                                     @RequestBody Map<String, Object> body,
                                                     @RequestParam(required = false) String adminUserId,
                                                     @RequestParam(required = false) String adminName) {
@@ -91,29 +96,29 @@ public class UserController {
             return ResponseEntity.status(403).build();
         }
         Boolean enabled = Boolean.TRUE.equals(body.get("enabled"));
-        return ResponseEntity.ok(userDirectoryService.updateEnabled(wecomUserId, enabled));
+        return ResponseEntity.ok(userDirectoryService.updateEnabled(platformUserId, enabled));
     }
 
-    @GetMapping("/{wecomUserId}/visibility-rules")
-    public ResponseEntity<List<UserVisibilityRule>> getVisibilityRules(@PathVariable String wecomUserId,
+    @GetMapping("/{platformUserId}/visibility-rules")
+    public ResponseEntity<List<UserVisibilityRule>> getVisibilityRules(@PathVariable String platformUserId,
                                                                        @RequestParam(required = false) String adminUserId,
                                                                        @RequestParam(required = false) String adminName) {
         if (!isAdmin(adminUserId, adminName)) {
             return ResponseEntity.status(403).build();
         }
-        return ResponseEntity.ok(visibilityRuleRepository.findByViewerUserIdAndCanViewTrue(wecomUserId));
+        return ResponseEntity.ok(visibilityRuleRepository.findByViewerUserIdAndCanViewTrue(platformUserId));
     }
 
-    @PutMapping("/{wecomUserId}/visibility-rules")
+    @PutMapping("/{platformUserId}/visibility-rules")
     @Transactional
-    public ResponseEntity<List<UserVisibilityRule>> saveVisibilityRules(@PathVariable String wecomUserId,
+    public ResponseEntity<List<UserVisibilityRule>> saveVisibilityRules(@PathVariable String platformUserId,
                                                                         @RequestBody Map<String, Object> body,
                                                                         @RequestParam(required = false) String adminUserId,
                                                                         @RequestParam(required = false) String adminName) {
         if (!isAdmin(adminUserId, adminName)) {
             return ResponseEntity.status(403).build();
         }
-        visibilityRuleRepository.deleteByViewerUserId(wecomUserId);
+        visibilityRuleRepository.deleteByViewerUserId(platformUserId);
         Object raw = body.get("visibleUserIds");
         List<String> visibleUserIds = new ArrayList<>();
         if (raw instanceof List<?>) {
@@ -125,7 +130,7 @@ public class UserController {
         }
         List<UserVisibilityRule> saved = new ArrayList<>();
         for (String visibleUserId : visibleUserIds) {
-            UserVisibilityRule rule = new UserVisibilityRule(wecomUserId, visibleUserId, true, true);
+            UserVisibilityRule rule = new UserVisibilityRule(platformUserId, visibleUserId, true, true);
             rule.setCreatedByUserId(adminUserId);
             rule.setCreatedByName(adminName);
             rule.setCreatedAt(now());
