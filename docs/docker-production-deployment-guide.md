@@ -1,4 +1,4 @@
-# BOMS Docker Production Deployment Guide
+﻿# BOMS Docker Production Deployment Guide
 
 本文档面向服务器部署，覆盖当前项目是否已经包含 Nginx、是否需要额外安装 Nginx、Docker Compose 一键部署、生产环境变量、端口开放、数据持久化、更新回滚和常见问题排查。
 
@@ -276,11 +276,10 @@ SPRING_DATASOURCE_USERNAME=root
 SPRING_DATASOURCE_PASSWORD=请替换为强密码
 JWT_SECRET=请替换为至少32位随机字符串
 JWT_EXPIRATION_MS=86400000
-WECOM_CORP_ID=你的企业微信CorpID
-WECOM_AGENT_ID=你的企业微信AgentID
-WECOM_SECRET=你的企业微信Secret
-WECOM_REDIRECT_URI=http://服务器IP:5173/login-callback
-WECOM_SANDBOX_MODE=false
+FEISHU_APP_ID=你的飞书AppID
+FEISHU_APP_SECRET=你的飞书AppSecret
+FEISHU_REDIRECT_URI=http://服务器IP:5173/login-callback
+FEISHU_SANDBOX_MODE=false
 ```
 
 生成随机 JWT 密钥示例：
@@ -323,11 +322,10 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS}
-      WECOM_CORP_ID: ${WECOM_CORP_ID}
-      WECOM_AGENT_ID: ${WECOM_AGENT_ID}
-      WECOM_SECRET: ${WECOM_SECRET}
-      WECOM_REDIRECT_URI: ${WECOM_REDIRECT_URI}
-      WECOM_SANDBOX_MODE: ${WECOM_SANDBOX_MODE}
+      FEISHU_APP_ID: ${FEISHU_APP_ID}
+      FEISHU_APP_SECRET: ${FEISHU_APP_SECRET}
+      FEISHU_REDIRECT_URI: ${FEISHU_REDIRECT_URI}
+      FEISHU_SANDBOX_MODE: ${FEISHU_SANDBOX_MODE}
     depends_on:
       - mysql
       - redis
@@ -496,7 +494,7 @@ sudo certbot --nginx -d 你的域名
 sudo certbot renew --dry-run
 ```
 
-如果使用 HTTPS，企业微信回调地址也应改成：
+如果使用 HTTPS，飞书回调地址也应改成：
 
 ```text
 https://你的域名/login-callback
@@ -505,7 +503,7 @@ https://你的域名/login-callback
 并同步更新：
 
 ```env
-WECOM_REDIRECT_URI=https://你的域名/login-callback
+FEISHU_REDIRECT_URI=https://你的域名/login-callback
 ```
 
 ## 9. 数据库说明
@@ -597,36 +595,34 @@ sudo docker compose logs -f redis
 sudo docker exec -it boms-redis redis-cli
 ```
 
-## 11. 企业微信配置
+## 11. 飞书配置
 
 当前默认配置是演示值：
 
 ```yaml
-wecom:
-  corp-id: wwdemo1234567890
-  agent-id: 1000002
-  secret: secret_demo_1234567890abcdefghijklmnopqrst
+feishu:
+  app-id: cli_aa930a532a78dcbb
+  app-secret: ApUwfVXA5fAvi2FSvleGLgq2sICGCgaf
   redirect-uri: http://localhost:5173/login-callback
   sandbox-mode: true
 ```
 
-正式部署需要替换为真实企业微信应用配置：
+正式部署需要替换为真实飞书应用配置：
 
 ```env
-WECOM_CORP_ID=真实CorpID
-WECOM_AGENT_ID=真实AgentID
-WECOM_SECRET=真实Secret
-WECOM_REDIRECT_URI=http://服务器IP:5173/login-callback
-WECOM_SANDBOX_MODE=false
+FEISHU_APP_ID=真实AppID
+FEISHU_APP_SECRET=真实AppSecret
+FEISHU_REDIRECT_URI=http://服务器IP:5173/login-callback
+FEISHU_SANDBOX_MODE=false
 ```
 
 如果使用域名和 HTTPS：
 
 ```env
-WECOM_REDIRECT_URI=https://你的域名/login-callback
+FEISHU_REDIRECT_URI=https://你的域名/login-callback
 ```
 
-企业微信后台也要同步配置可信域名、回调地址或授权域名。
+飞书后台也要同步配置可信域名、回调地址或授权域名。
 
 ## 12. 常用运维命令
 
@@ -876,7 +872,7 @@ sudo docker compose up -d
 - 已拉取 `dev` 分支最新代码
 - 已修改 MySQL 密码
 - 已修改 JWT 密钥
-- 已配置企业微信真实参数
+- 已配置飞书真实参数
 - 已确认是否使用沙箱模式
 - 已确认访问方式：`IP:5173` 或域名 `80/443`
 - 如果使用域名和 Nginx，已确认前端 API 是否改为 `/api`
@@ -901,4 +897,5 @@ sudo docker compose up -d
 3. 修改前端 `API_BASE` 为 `/api`。
 4. 只开放 `80/443`。
 5. 不对公网开放 MySQL 和 Redis。
-6. 使用强密码和真实企业微信配置。
+6. 使用强密码和真实飞书配置。
+
