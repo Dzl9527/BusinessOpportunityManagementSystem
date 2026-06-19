@@ -96,8 +96,8 @@ public class FeishuService {
                     if (userInfoResponse.getStatusCode().is2xxSuccessful() && userInfoResponse.getBody() != null) {
                         Map<String, Object> userInfoData = (Map<String, Object>) userInfoResponse.getBody().get("data");
                         if (userInfoData != null) {
-                            String userId = (String) userInfoData.get("user_id");
-                            if (userId == null) userId = (String) userInfoData.get("open_id");
+                            String userId = (String) userInfoData.get("open_id");
+                            if (userId == null) userId = (String) userInfoData.get("user_id");
                             if (userId != null) {
                                 String name = (String) userInfoData.get("name");
                                 String avatarUrl = (String) userInfoData.get("avatar_url");
@@ -280,7 +280,8 @@ public class FeishuService {
         if (sandboxMode) return true;
         try {
             String token = getTenantAccessToken();
-            String url = "https://open.feishu.cn/open-apis/im/v1/messages?receive_id_type=open_id";
+            String receiveIdType = toUserId.startsWith("ou_") ? "open_id" : "user_id";
+            String url = "https://open.feishu.cn/open-apis/im/v1/messages?receive_id_type=" + receiveIdType;
             
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -297,7 +298,13 @@ public class FeishuService {
             
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
                 Integer code = (Integer) response.getBody().get("code");
-                return code != null && code == 0;
+                if (code != null && code == 0) {
+                    return true;
+                } else {
+                    logger.error("Feishu Message Failed, response: {}", response.getBody());
+                }
+            } else {
+                logger.error("Feishu Message HTTP Error: {}", response.getStatusCode());
             }
         } catch (Exception e) {
             logger.error("Feishu Message Error", e);
