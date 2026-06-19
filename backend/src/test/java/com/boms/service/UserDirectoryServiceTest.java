@@ -36,7 +36,7 @@ class UserDirectoryServiceTest {
                 .thenReturn(Optional.empty());
         when(userRepository.save(any(SystemUser.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        SystemUser user = userDirectoryService.getOrCreateUser("ou_test", "测试用户", "");
+        SystemUser user = userDirectoryService.getOrCreateUser("ou_test", "测试用户", "", null);
 
         assertEquals("ou_test", user.getPlatformUserId());
         assertEquals("ou_test", user.getWecomUserId());

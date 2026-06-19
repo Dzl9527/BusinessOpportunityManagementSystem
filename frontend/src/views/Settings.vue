@@ -1,6 +1,6 @@
 <template>
   <section class="content-panel active admin-tools-page settings-page">
-    <nav class="settings-tabs" style="margin-top: 16px;">
+    <nav class="settings-tabs">
       <button 
         type="button" 
         class="tab-btn" 
@@ -777,6 +777,10 @@ const activeTab = ref('feishu')
   border-bottom: 2px solid #e2e8f0;
   padding-bottom: 8px;
   overflow-x: auto;
+  background: var(--workspace-card-bg);
+  z-index: 5;
+  flex-shrink: 0;
+  padding-top: 8px;
 }
 
 .tab-btn {
@@ -804,7 +808,11 @@ const activeTab = ref('feishu')
 }
 
 .settings-tab-content {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
   animation: fadeIn 0.25s ease-out;
+  padding-bottom: 40px;
 }
 
 @keyframes fadeIn {
@@ -816,6 +824,13 @@ const activeTab = ref('feishu')
   display: grid;
   grid-template-columns: 1fr;
   gap: 24px;
+}
+
+.stacked-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 24px;
 }
 
 .settings-overview-grid.cols-3 {

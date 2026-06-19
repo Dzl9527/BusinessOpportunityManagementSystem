@@ -49,7 +49,7 @@ public class FeishuController {
             return ResponseEntity.status(401).body(Map.of("success", false, "message", "登录失败：无法从飞书获取身份信息"));
         }
 
-        SystemUser user = userDirectoryService.getOrCreateUser(platformUserId, userInfo.get("name"), userInfo.get("avatarUrl"));
+        SystemUser user = userDirectoryService.getOrCreateUser(platformUserId, userInfo.get("name"), userInfo.get("avatarUrl"), userInfo.get("employeeNo"));
         
         if (!user.isActive()) {
             return ResponseEntity.status(403).body(Map.of("success", false, "message", "登录失败：账号已被禁用"));
@@ -59,6 +59,7 @@ public class FeishuController {
         
         Map<String, Object> userMap = new HashMap<>();
         userMap.put("userId", user.getPlatformUserId());
+        userMap.put("employeeNo", user.getEmployeeNo());
         userMap.put("platformUserId", user.getPlatformUserId());
         userMap.put("name", user.getName());
         userMap.put("role", user.getRole());

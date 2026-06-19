@@ -27,7 +27,7 @@ public class UserDirectoryService {
         return LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
     }
 
-    public SystemUser getOrCreateUser(String platformUserId, String name, String avatarUrl) {
+    public SystemUser getOrCreateUser(String platformUserId, String name, String avatarUrl, String employeeNo) {
         String resolvedUserId = platformUserId == null || platformUserId.isBlank() ? "zhang_jingli" : platformUserId.trim();
         String resolvedName = name == null || name.isBlank() ? "张经理" : name.trim();
         SystemUser user = userRepository.findByPlatformUserIdOrWecomUserId(resolvedUserId, resolvedUserId).orElseGet(() -> {
@@ -35,6 +35,7 @@ public class UserDirectoryService {
             created.setPlatformUserId(resolvedUserId);
             created.setWecomUserId(resolvedUserId);
             created.setName(resolvedName);
+            created.setEmployeeNo(employeeNo);
             if (avatarUrl != null && !avatarUrl.isBlank()) {
                 created.setAvatarUrl(avatarUrl);
             }
@@ -54,6 +55,10 @@ public class UserDirectoryService {
         }
         if (user.getWecomUserId() == null || user.getWecomUserId().isBlank()) {
             user.setWecomUserId(resolvedUserId);
+            needsUpdate = true;
+        }
+        if (employeeNo != null && !employeeNo.isBlank() && !employeeNo.equals(user.getEmployeeNo())) {
+            user.setEmployeeNo(employeeNo);
             needsUpdate = true;
         }
         if (avatarUrl != null && !avatarUrl.isBlank() && !avatarUrl.equals(user.getAvatarUrl())) {
@@ -79,7 +84,7 @@ public class UserDirectoryService {
     }
 
     public SystemUser getCurrentUser(String userId, String userName) {
-        return getOrCreateUser(userId, userName, null);
+        return getOrCreateUser(userId, userName, null, null);
     }
 
     public List<SystemUser> listUsers() {
@@ -107,7 +112,8 @@ public class UserDirectoryService {
             System.out.println("[syncFromPlatform] Dept " + deptId + " has " + users.size() + " users");
             for (Map<String, Object> userInfo : users) {
                 String openId = (String) userInfo.get("open_id");
-                if (openId == null) openId = (String) userInfo.get("user_id");
+                String feishuUserId = (String) userInfo.get("user_id");
+                if (openId == null) openId = feishuUserId;
                 if (openId == null) continue;
                 
                 String name = (String) userInfo.get("name");
@@ -127,7 +133,7 @@ public class UserDirectoryService {
                 }
                 
                 System.out.println("[syncFromPlatform] Syncing user: " + openId + " name=" + name);
-                SystemUser user = getOrCreateUser(openId, name, avatarUrl);
+                SystemUser user = getOrCreateUser(openId, name, avatarUrl, feishuUserId);
                 user.setDepartmentId(deptId);
                 user.setDepartmentName(dept.getName());
                 user.setLastSyncedAt(now());
@@ -141,17 +147,17 @@ public class UserDirectoryService {
 
     public void ensureSandboxUsers() {
         if (userRepository.count() == 0) {
-            SystemUser zhang = getOrCreateUser("zhang_jingli", "张经理", null);
+            SystemUser zhang = getOrCreateUser("zhang_jingli", "张经理", null, null);
             zhang.setRole("ADMIN");
             zhang.setCanViewAll(true);
             userRepository.save(zhang);
 
-            SystemUser li = getOrCreateUser("li_zhuguan", "李主管", null);
+            SystemUser li = getOrCreateUser("li_zhuguan", "李主管", null, null);
             li.setRole("USER");
             li.setDepartmentId("sandbox_dept_sales");
             userRepository.save(li);
 
-            SystemUser wang = getOrCreateUser("wang_xiaoshou", "王销售", null);
+            SystemUser wang = getOrCreateUser("wang_xiaoshou", "王销售", null, null);
             wang.setRole("USER");
             wang.setDepartmentId("sandbox_dept_sales");
             userRepository.save(wang);
@@ -166,7 +172,7 @@ public class UserDirectoryService {
     }
 
     public SystemUser updateRole(String platformUserId, String role, Boolean canViewAll) {
-        SystemUser user = getOrCreateUser(platformUserId, platformUserId, null);
+        SystemUser user = getOrCreateUser(platformUserId, platformUserId, null, null);
         user.setRole(role == null || role.isBlank() ? "USER" : role);
         user.setCanViewAll(Boolean.TRUE.equals(canViewAll) || "ADMIN".equalsIgnoreCase(role));
         user.setAdminSource("MANUAL");
@@ -175,7 +181,7 @@ public class UserDirectoryService {
     }
 
     public SystemUser updateEnabled(String platformUserId, Boolean enabled) {
-        SystemUser user = getOrCreateUser(platformUserId, platformUserId, null);
+        SystemUser user = getOrCreateUser(platformUserId, platformUserId, null, null);
         user.setEnabled(Boolean.TRUE.equals(enabled));
         user.setStatus(Boolean.TRUE.equals(enabled) ? "ACTIVE" : "DISABLED");
         user.setUpdatedAt(now());

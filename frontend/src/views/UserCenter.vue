@@ -20,8 +20,8 @@
               <strong>{{ user ? '已登录' : '未登录' }}</strong>
             </div>
             <div class="meta-item">
-              <span>飞书 ID</span>
-              <strong>{{ user?.userId || '-' }}</strong>
+              <span>工号</span>
+              <strong>{{ user?.employeeNo || '-' }}</strong>
             </div>
             <div class="meta-item">
               <span>当前角色</span>

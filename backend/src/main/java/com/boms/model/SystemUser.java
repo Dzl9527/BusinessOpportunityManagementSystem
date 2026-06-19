@@ -22,6 +22,7 @@ public class SystemUser {
     private String avatarUrl;
 
     private String mobile;
+    private String employeeNo;
     private String email;
     private String departmentId;
     private String departmentName;
@@ -90,6 +91,14 @@ public class SystemUser {
 
     public void setMobile(String mobile) {
         this.mobile = mobile;
+    }
+
+    public String getEmployeeNo() {
+        return employeeNo;
+    }
+
+    public void setEmployeeNo(String employeeNo) {
+        this.employeeNo = employeeNo;
     }
 
     public String getEmail() {
