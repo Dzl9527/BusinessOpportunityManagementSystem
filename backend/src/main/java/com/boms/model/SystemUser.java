@@ -12,6 +12,9 @@ public class SystemUser {
     @Column(nullable = false, unique = true, length = 100)
     private String platformUserId;
 
+    @Column(name = "wecom_user_id", nullable = false, unique = true, length = 100)
+    private String wecomUserId;
+
     @Column(nullable = false, length = 100)
     private String name;
 
@@ -49,6 +52,20 @@ public class SystemUser {
 
     public void setPlatformUserId(String platformUserId) {
         this.platformUserId = platformUserId;
+        if (this.wecomUserId == null || this.wecomUserId.isBlank()) {
+            this.wecomUserId = platformUserId;
+        }
+    }
+
+    public String getWecomUserId() {
+        return wecomUserId;
+    }
+
+    public void setWecomUserId(String wecomUserId) {
+        this.wecomUserId = wecomUserId;
+        if (this.platformUserId == null || this.platformUserId.isBlank()) {
+            this.platformUserId = wecomUserId;
+        }
     }
 
     public String getName() {

@@ -5,6 +5,10 @@
 ## [2.1.1] - 2026-06-19
 
 ### Fixed
+- **飞书扫码登录旧库兼容修复**:
+  - 修复生产 MySQL 旧表仍保留 `system_users.wecom_user_id NOT NULL` 时，飞书扫码回调创建用户失败并返回登录验证失败的问题。
+  - 后端 `SystemUser` 现在同时维护 `platformUserId` 与旧 `wecomUserId`，并在用户查询和创建时保持两者一致，兼容历史权限字段。
+  - 新增 `database/2026-06-19-system-users-platform-id-compat.sql`，用于生产库一次性回填并校准用户身份字段。
 - **飞书消息发送权限异常拦截修复**: 
   - 修复了用户提报商机后无法收到智能体消息通知的 Bug（飞书报错 `Access denied` 缺少 `contact:user.employee_id:readonly` 权限）。
   - **动态通讯协议降级**: 在调用 `/im/v1/messages` 接口时，新增根据 ID 前缀自动判断类型的逻辑，遇到非 `open_id`（如员工工号 `22070028`）时，自动将 `receive_id_type` 切换为 `user_id`，避免参数写死导致的 400 Bad Request 错误。

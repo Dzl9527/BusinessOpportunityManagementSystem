@@ -30,9 +30,10 @@ public class UserDirectoryService {
     public SystemUser getOrCreateUser(String platformUserId, String name, String avatarUrl) {
         String resolvedUserId = platformUserId == null || platformUserId.isBlank() ? "zhang_jingli" : platformUserId.trim();
         String resolvedName = name == null || name.isBlank() ? "张经理" : name.trim();
-        SystemUser user = userRepository.findByPlatformUserId(resolvedUserId).orElseGet(() -> {
+        SystemUser user = userRepository.findByPlatformUserIdOrWecomUserId(resolvedUserId, resolvedUserId).orElseGet(() -> {
             SystemUser created = new SystemUser();
             created.setPlatformUserId(resolvedUserId);
+            created.setWecomUserId(resolvedUserId);
             created.setName(resolvedName);
             if (avatarUrl != null && !avatarUrl.isBlank()) {
                 created.setAvatarUrl(avatarUrl);
@@ -47,6 +48,14 @@ public class UserDirectoryService {
         });
         
         boolean needsUpdate = false;
+        if (user.getPlatformUserId() == null || user.getPlatformUserId().isBlank()) {
+            user.setPlatformUserId(resolvedUserId);
+            needsUpdate = true;
+        }
+        if (user.getWecomUserId() == null || user.getWecomUserId().isBlank()) {
+            user.setWecomUserId(resolvedUserId);
+            needsUpdate = true;
+        }
         if (avatarUrl != null && !avatarUrl.isBlank() && !avatarUrl.equals(user.getAvatarUrl())) {
             user.setAvatarUrl(avatarUrl);
             needsUpdate = true;
