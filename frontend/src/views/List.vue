@@ -290,7 +290,6 @@ import { computed, defineComponent, h, onMounted, onUnmounted, reactive, ref, wa
 import { useAuthStore } from '../stores/useAuthStore'
 import { useOppStore } from '../stores/useOppStore'
 import { useAppStore } from '../stores/useAppStore'
-import { useUserStore } from '../stores/useUserStore'
 import { useMetricsStore } from '../stores/useMetricsStore'
 import OpportunityDrawer from '../components/OpportunityDrawer.vue'
 
@@ -365,7 +364,6 @@ export default {
         const authStore = useAuthStore()
     const oppStore = useOppStore()
     const appStore = useAppStore()
-    const userStore = useUserStore()
     const metricsStore = useMetricsStore()
 const readUiPrefs = () => {
       try {
@@ -618,7 +616,6 @@ const readUiPrefs = () => {
     onMounted(async () => {
       await oppStore.fetchOpportunityOptions()
       await oppStore.fetchOpportunities(filters)
-      await userStore.fetchContacts()
       window.addEventListener('open-new-opp-modal', initNewOpp)
     })
 

@@ -49,11 +49,7 @@ public class UserController {
     }
 
     @GetMapping
-    public ResponseEntity<List<SystemUser>> listUsers(@RequestParam(required = false) String adminUserId,
-                                                      @RequestParam(required = false) String adminName) {
-        if (!isAdmin(adminUserId, adminName)) {
-            return ResponseEntity.status(403).build();
-        }
+    public ResponseEntity<List<SystemUser>> listUsers() {
         return ResponseEntity.ok(userDirectoryService.listUsers());
     }
 
