@@ -153,6 +153,55 @@
           </table>
         </div>
 
+        <div class="mobile-opportunity-cards">
+          <div v-for="opp in opportunities" :key="opp.id" class="opp-mobile-card">
+            <div class="opp-card-header">
+              <div>
+                <h4 class="opp-card-title" @click="openDetail(opp.id)">{{ opp.name || '未命名项目' }}</h4>
+                <div class="opp-card-company">{{ opp.company || '-' }}</div>
+              </div>
+              <span class="progress-pill">{{ opp.businessProgressStatus || '新提报' }}</span>
+            </div>
+            
+            <div class="opp-card-body">
+              <div class="opp-card-field">
+                <span class="field-label">预估金额</span>
+                <span class="field-value amount">{{ formatBusinessAmount(opp) }}</span>
+              </div>
+              <div class="opp-card-field">
+                <span class="field-label">赢率</span>
+                <span class="field-value">{{ opp.winRateLabel || `${opp.probability || 0}%` }}</span>
+              </div>
+              <div class="opp-card-field">
+                <span class="field-label">设备类型</span>
+                <span class="field-value">{{ opp.deviceTypes || '-' }}</span>
+              </div>
+              <div class="opp-card-field">
+                <span class="field-label">投标截止</span>
+                <span class="field-value">{{ opp.bidDeadline || opp.closeDate || '-' }}</span>
+              </div>
+            </div>
+
+            <div class="opp-card-footer">
+              <div class="opp-card-owner">
+                提报人：{{ opp.submitter || opp.creator || '-' }}
+              </div>
+              <div class="opp-card-actions">
+                <button class="btn-icon" @click="openEditOpp(opp.id)" title="编辑自己提报的信息">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                </button>
+                <button class="btn-icon" @click="handleDelete(opp)" title="删除" style="border-color: var(--danger-light); color: var(--danger);">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <div v-if="opportunities.length === 0" class="empty-cards-state">
+            没有查找到符合条件的商机提报
+          </div>
+        </div>
+
         <div class="pagination-wrapper" style="display: flex; justify-content: flex-end; align-items: center; padding: 16px; gap: 16px;">
           <span style="color: var(--text-muted); font-size: 14px;">共 {{ oppStore.totalElements }} 条数据</span>
           <div style="display: flex; gap: 8px;">
