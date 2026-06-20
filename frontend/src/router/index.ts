@@ -62,7 +62,7 @@ router.beforeEach((to, from, next) => {
   
   // Set window title
   if (to.meta && to.meta.title) {
-    document.title = `${to.meta.title} | 商机宝 CRM`
+    document.title = `${to.meta.title} | 设备商机管理系统`
   }
 
   // Auth Guard

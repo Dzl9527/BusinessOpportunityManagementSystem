@@ -33,3 +33,6 @@ feishu:
   sandbox-mode: ${FEISHU_SANDBOX_MODE:false}
   redirect-uri: ${FEISHU_REDIRECT_URI:http://localhost:5173/login-callback}
 
+app:
+  seed-demo-data: true
+

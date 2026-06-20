@@ -7,7 +7,7 @@
             <span class="sidebar-logo-dot"></span>
           </div>
           <div>
-            <span class="sidebar-title">商机宝 CRM</span>
+            <span class="sidebar-title">设备商机管理系统</span>
             <span class="sidebar-subtitle">Business Workspace</span>
           </div>
         </div>
