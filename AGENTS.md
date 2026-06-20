@@ -19,6 +19,9 @@
 - 前端代码放在 `frontend/`，页面、组件、路由和状态管理保持职责清晰。
 - 数据库变更放在 `database/`，每次字段或表结构变化都要补迁移说明。
 - 可复用脚本放在 `tools/`，一次性实验放在 `scratch/`。
+- 多步骤表单（Stepper/Wizard）禁止使用 HTML5 原生 `required` 属性，必须使用纯 JS 逻辑进行分步校验，避免因隐藏或未渲染的 DOM 节点导致浏览器校验静默失败或控制台报错。
+- 页面全局 Toast 提示采用统一的置顶居中布局（`top: 24px`），并使用 Vue `<transition>` 包裹提供平滑淡入淡出动效。
+- 复杂配置大表单页面采用局部滚动结构（外层锁定 `overflow: hidden; height: 100%`，页签固定 `flex-shrink: 0`，内容区 `overflow-y: auto; flex: 1; min-height: 0` 独立滚动），且内容区底部留足 padding 缓冲，防止操作按钮被视口裁剪。
 
 ## 文档规则
 
