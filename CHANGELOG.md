@@ -2,6 +2,18 @@
 
 本文档记录已经进入项目版本管理的功能变化、修复和发布注意事项。需求细节和方案过程请查看 `docs/` 目录。
 
+## [2.1.3] - 2026-06-20
+
+### Fixed
+- **工作台大盘响应式加载与缓存优化**:
+  - 解决工作台页面刷新时指标卡片与图表数据加载延迟/显示空白（`0.00`）的问题。在前端 `Dashboard.vue` 中引入 Pinia 的 `storeToRefs`，实现对 metrics 异步请求状态更新的响应式追踪与图表重绘。
+  - 移除了后端 `OpportunityController.java` 中对大盘指标接口 `/api/opportunities/metrics` 和 `/api/opportunities/charts/*` 的 `@Cacheable` 缓存注解，避免本地 H2 内存数据库初始化及未注册登录时缓存初始零值，确保数据 100% 实时准确。
+- **JWT 自动用户创建与健壮性增强**:
+  - 优化 `JwtAuthenticationFilter.java` 安全过滤器，在校验 JWT 成功但发现数据库中无该用户记录时，自动调用 `getOrCreateUser` 创建并初始化用户档案，彻底杜绝后续商机查询因缺少用户记录引起的空指针或数据引用异常。
+  - 在 `JwtTokenProvider.java` 中新增 `getUserNameFromToken` 辅助方法，以便在拦截器中直接获取解析后的用户真实姓名。
+- **JVM 字符编码兼容与管理员身份判定修复**:
+  - 解决 Windows 系统下 JVM 默认 GBK 字符集导致 UTF-8 中文用户名 `邓钟璐` 匹配比对失败、无法自动赋予管理员权限的 bug。新增基于平台 ID `ou_603f46a19d2c51d748f1f85a88ed239c` 的硬编码判定，确保管理员身份权限判定万无一失。
+
 ## [2.1.2] - 2026-06-20
 
 ### Fixed

@@ -27,7 +27,7 @@ public class UserDirectoryService {
         return LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
     }
 
-    public SystemUser getOrCreateUser(String platformUserId, String name, String avatarUrl, String employeeNo) {
+    public synchronized SystemUser getOrCreateUser(String platformUserId, String name, String avatarUrl, String employeeNo) {
         String resolvedUserId = platformUserId == null || platformUserId.isBlank() ? "zhang_jingli" : platformUserId.trim();
         String resolvedName = name == null || name.isBlank() ? "张经理" : name.trim();
         SystemUser user = userRepository.findByPlatformUserIdOrWecomUserId(resolvedUserId, resolvedUserId).orElseGet(() -> {
@@ -65,7 +65,7 @@ public class UserDirectoryService {
             user.setAvatarUrl(avatarUrl);
             needsUpdate = true;
         }
-        if (!resolvedName.equals(user.getName())) {
+        if (resolvedName != null && !resolvedName.isBlank() && !"未登录用户".equals(resolvedName) && !resolvedName.equals(user.getName())) {
             user.setName(resolvedName);
             needsUpdate = true;
         }
@@ -73,7 +73,7 @@ public class UserDirectoryService {
             user.setUpdatedAt(now());
             user = userRepository.save(user);
         }
-        if (("zhang_jingli".equals(resolvedUserId) || "邓钟璐".equals(resolvedName)) && !user.isAdmin()) {
+        if (("zhang_jingli".equals(resolvedUserId) || "ou_603f46a19d2c51d748f1f85a88ed239c".equals(resolvedUserId) || "邓钟璐".equals(resolvedUserId) || "邓钟璐".equals(resolvedName)) && !user.isAdmin()) {
             user.setRole("ADMIN");
             user.setCanViewAll(true);
             user.setAdminSource(user.getAdminSource() == null ? "SYSTEM_INIT" : user.getAdminSource());
@@ -83,8 +83,18 @@ public class UserDirectoryService {
         return user;
     }
 
+    public java.util.Optional<SystemUser> getCurrentUserOptional(String userId) {
+        if (userId == null || userId.isBlank()) {
+            return java.util.Optional.empty();
+        }
+        String resolvedUserId = userId.trim();
+        return userRepository.findByPlatformUserIdOrWecomUserId(resolvedUserId, resolvedUserId);
+    }
+
     public SystemUser getCurrentUser(String userId, String userName) {
-        return getOrCreateUser(userId, userName, null, null);
+        String resolvedUserId = userId == null || userId.isBlank() ? "zhang_jingli" : userId.trim();
+        return userRepository.findByPlatformUserIdOrWecomUserId(resolvedUserId, resolvedUserId)
+                .orElseGet(() -> getOrCreateUser(resolvedUserId, userName, null, null));
     }
 
     public List<SystemUser> listUsers() {

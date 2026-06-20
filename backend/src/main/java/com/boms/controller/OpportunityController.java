@@ -15,6 +15,7 @@ import com.boms.service.FeishuService;
 import com.boms.service.OpportunityReminderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.server.ResponseStatusException;
@@ -536,6 +537,7 @@ public class OpportunityController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @CacheEvict(value = {"dashboard_metrics", "dashboard_funnel", "dashboard_stages", "dashboard_trend"}, allEntries = true)
     @PostMapping
     public Opportunity create(@RequestBody Opportunity opp,
                               @RequestParam(required = false) String userId,
@@ -565,6 +567,7 @@ public class OpportunityController {
         return oppRepository.save(opp);
     }
 
+    @CacheEvict(value = {"dashboard_metrics", "dashboard_funnel", "dashboard_stages", "dashboard_trend"}, allEntries = true)
     @PostMapping("/submissions")
     public Opportunity submit(@RequestBody Opportunity opp,
                               @RequestParam(required = false) String userId,
@@ -572,6 +575,7 @@ public class OpportunityController {
         return create(opp, userId, userName);
     }
 
+    @CacheEvict(value = {"dashboard_metrics", "dashboard_funnel", "dashboard_stages", "dashboard_trend"}, allEntries = true)
     @PutMapping("/{id}")
     public ResponseEntity<Opportunity> update(@PathVariable Long id,
                                               @RequestBody Opportunity updatedData,
@@ -641,6 +645,7 @@ public class OpportunityController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
+    @CacheEvict(value = {"dashboard_metrics", "dashboard_funnel", "dashboard_stages", "dashboard_trend"}, allEntries = true)
     @PutMapping("/submissions/{id}")
     public ResponseEntity<Opportunity> updateSubmission(@PathVariable Long id,
                                                         @RequestBody Opportunity updatedData,
@@ -649,6 +654,7 @@ public class OpportunityController {
         return update(id, updatedData, userId, userName);
     }
 
+    @CacheEvict(value = {"dashboard_metrics", "dashboard_funnel", "dashboard_stages", "dashboard_trend"}, allEntries = true)
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id,
                                        @RequestParam(required = false) String userId,
@@ -730,6 +736,7 @@ public class OpportunityController {
         return options;
     }
 
+    @CacheEvict(value = {"dashboard_metrics", "dashboard_funnel", "dashboard_stages", "dashboard_trend"}, allEntries = true)
     @PostMapping("/{id}/attachments")
     public ResponseEntity<OpportunityAttachment> addAttachment(@PathVariable Long id,
                                                                @RequestBody OpportunityAttachment body,
@@ -754,6 +761,7 @@ public class OpportunityController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
+    @CacheEvict(value = {"dashboard_metrics", "dashboard_funnel", "dashboard_stages", "dashboard_trend"}, allEntries = true)
     @DeleteMapping("/{id}/attachments/{attachmentId}")
     public ResponseEntity<Void> deleteAttachment(@PathVariable Long id,
                                                 @PathVariable Long attachmentId,
@@ -771,6 +779,7 @@ public class OpportunityController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
+    @CacheEvict(value = {"dashboard_metrics", "dashboard_funnel", "dashboard_stages", "dashboard_trend"}, allEntries = true)
     @PostMapping("/{id}/reminders")
     public ResponseEntity<OpportunityReminder> addReminder(@PathVariable Long id,
                                                            @RequestBody Map<String, String> body,
@@ -837,13 +846,12 @@ public class OpportunityController {
         return ResponseEntity.ok(result);
     }
 
-
-    @Cacheable(value = "dashboard_metrics", key = "T(com.boms.security.SecurityUtils).getCurrentUserId()")
     @GetMapping("/metrics")
     public Map<String, Object> getMetrics(@RequestParam(required = false) String userId,
                                           @RequestParam(required = false) String userName) {
         SystemUser currentUser = resolveCurrentUser(userId, userName);
         boolean isAdmin = currentUser.isAdmin();
+        System.out.println("[OpportunityController.getMetrics] userId=" + currentUser.getPlatformUserId() + ", role=" + currentUser.getRole() + ", isAdmin=" + isAdmin);
         List<String> visibleUserIds = new ArrayList<>(permissionService.getVisibleUserIds(currentUser));
         if (visibleUserIds.isEmpty() && !isAdmin) visibleUserIds.add("-1"); // Prevent empty IN clause
 
@@ -869,15 +877,16 @@ public class OpportunityController {
         metrics.put("avgValue", 0.0); // Simplified to 0.0 for dashboard performance
         metrics.put("reportedCount", 0L); // Deprecated in dashboard
         metrics.put("authorizationCount", 0L); // Deprecated in dashboard
+        System.out.println("[OpportunityController.getMetrics] result=" + metrics);
         return metrics;
     }
 
-    @Cacheable(value = "dashboard_funnel", key = "T(com.boms.security.SecurityUtils).getCurrentUserId()")
     @GetMapping("/charts/funnel")
     public Map<String, Double> getFunnelChart(@RequestParam(required = false) String userId,
                                               @RequestParam(required = false) String userName) {
         SystemUser currentUser = resolveCurrentUser(userId, userName);
         boolean isAdmin = currentUser.isAdmin();
+        System.out.println("[OpportunityController.getFunnelChart] userId=" + currentUser.getPlatformUserId() + ", role=" + currentUser.getRole() + ", isAdmin=" + isAdmin);
         List<String> visibleUserIds = new ArrayList<>(permissionService.getVisibleUserIds(currentUser));
         if (visibleUserIds.isEmpty() && !isAdmin) visibleUserIds.add("-1");
 
@@ -890,15 +899,16 @@ public class OpportunityController {
                 funnel.put(stage, value != null ? value : 0.0);
             }
         }
+        System.out.println("[OpportunityController.getFunnelChart] result=" + funnel);
         return funnel;
     }
 
-    @Cacheable(value = "dashboard_stages", key = "T(com.boms.security.SecurityUtils).getCurrentUserId()")
     @GetMapping("/charts/stages")
     public Map<String, Long> getStagesChart(@RequestParam(required = false) String userId,
                                             @RequestParam(required = false) String userName) {
         SystemUser currentUser = resolveCurrentUser(userId, userName);
         boolean isAdmin = currentUser.isAdmin();
+        System.out.println("[OpportunityController.getStagesChart] userId=" + currentUser.getPlatformUserId() + ", role=" + currentUser.getRole() + ", isAdmin=" + isAdmin);
         List<String> visibleUserIds = new ArrayList<>(permissionService.getVisibleUserIds(currentUser));
         if (visibleUserIds.isEmpty() && !isAdmin) visibleUserIds.add("-1");
 
@@ -911,15 +921,16 @@ public class OpportunityController {
                 counts.put(stage, count != null ? count : 0L);
             }
         }
+        System.out.println("[OpportunityController.getStagesChart] result=" + counts);
         return counts;
     }
 
-    @Cacheable(value = "dashboard_trend", key = "T(com.boms.security.SecurityUtils).getCurrentUserId()")
     @GetMapping("/charts/trend")
     public Map<String, Double> getTrendChart(@RequestParam(required = false) String userId,
                                              @RequestParam(required = false) String userName) {
         SystemUser currentUser = resolveCurrentUser(userId, userName);
         boolean isAdmin = currentUser.isAdmin();
+        System.out.println("[OpportunityController.getTrendChart] userId=" + currentUser.getPlatformUserId() + ", role=" + currentUser.getRole() + ", isAdmin=" + isAdmin);
         List<String> visibleUserIds = new ArrayList<>(permissionService.getVisibleUserIds(currentUser));
         if (visibleUserIds.isEmpty() && !isAdmin) visibleUserIds.add("-1");
 
@@ -932,6 +943,7 @@ public class OpportunityController {
                 trend.put(month, value != null ? value : 0.0);
             }
         }
+        System.out.println("[OpportunityController.getTrendChart] result=" + trend);
         return trend;
     }
 
