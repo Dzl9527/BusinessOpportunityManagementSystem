@@ -2,6 +2,25 @@
 
 本文档记录已经进入项目版本管理的功能变化、修复和发布注意事项。需求细节和方案过程请查看 `docs/` 目录。
 
+## [2.2.0] - 2026-06-28
+
+### Added
+- **大模型语义查重与持久化**:
+  - 引入通义千问 `text-embedding-v3` API，通过商机多文本字段（公司、名称、行业、设备型号等）拼接的向量计算，实现深层语义排重，识别字面不同但语义相同的重复商机。
+  - 新增 `opportunity_embeddings` 关联数据表，对计算出的 1024 维商机向量进行 CLOB 本地持久化缓存并匹配 MD5 特征，彻底消除重复的 Qwen API 费用。
+- **飞书排重卡片警报**:
+  - 开发了专属的 Markdown 交互式卡片排重报警发送逻辑，可在检测到相似商机时实时向管理员推送富文本警报消息。
+  - 在 `FeishuService` 中扩展了发送 `interactive` 交互式卡片 API。
+  - 在 `OpportunityController` 中提供 `POST /reminders/trigger-dedup-scan` 接口，支持管理员随时在后台手动启动全量排重扫描。
+- **每日定时自动查重**:
+  - 在 `OpportunityReminderService` 中集成了定时扫描任务，每日凌晨 2:00 自动进行全网商机两两排重并汇总推送。
+
+### Changed
+- **前后端查重合并**:
+  - 重构了 `/submissions/check-duplicates` 查重匹配端点，合并了原有的字面规则查重与新版大模型语义查重结果，并在接口层延续了严格的数据可见性权限隔离。
+- **Docker 部署环境配置**:
+  - 在 `docker-compose.yml` 中新增了 `DASHSCOPE_API_KEY` 和 `ADMIN_FEISHU_OPENID` 两个环境变量配置，确保容器化部署和集群环境中支持大模型向量接口调用和飞书消息收发。
+
 ## [2.1.0] - 2026-06-17
 
 ### Added

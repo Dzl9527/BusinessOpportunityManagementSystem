@@ -45,6 +45,8 @@ services:
       - FEISHU_APP_ID=${FEISHU_APP_ID:-cli_aa930a532a78dcbb}
       - FEISHU_APP_SECRET=${FEISHU_APP_SECRET:-ApUwfVXA5fAvi2FSvleGLgq2sICGCgaf}
       - FEISHU_REDIRECT_URI=${FEISHU_REDIRECT_URI:-http://localhost:5173/login-callback}
+      - DASHSCOPE_API_KEY=${DASHSCOPE_API_KEY:-}
+      - ADMIN_FEISHU_OPENID=${ADMIN_FEISHU_OPENID:-}
     depends_on:
       mysql:
         condition: service_healthy

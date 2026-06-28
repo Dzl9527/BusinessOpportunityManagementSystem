@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 public class FeishuService {
@@ -301,6 +302,34 @@ public class FeishuService {
             }
         } catch (Exception e) {
             logger.error("Feishu Message Error", e);
+        }
+        return false;
+    }
+
+    public boolean sendInteractiveCard(String toUserId, Map<String, Object> cardMap) {
+        if (sandboxMode) return true;
+        try {
+            String token = getTenantAccessToken();
+            String url = "https://open.feishu.cn/open-apis/im/v1/messages?receive_id_type=open_id";
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setBearerAuth(token);
+            
+            Map<String, Object> body = new HashMap<>();
+            body.put("receive_id", toUserId);
+            body.put("msg_type", "interactive");
+            body.put("content", new ObjectMapper().writeValueAsString(cardMap));
+            
+            HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+            ResponseEntity<Map> response = restTemplate.postForEntity(url, request, Map.class);
+            
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                Integer code = (Integer) response.getBody().get("code");
+                return code != null && code == 0;
+            }
+        } catch (Exception e) {
+            logger.error("Feishu Interactive Card Error", e);
         }
         return false;
     }

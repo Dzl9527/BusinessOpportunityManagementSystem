@@ -35,6 +35,9 @@ public class OpportunityReminderService {
     @Autowired
     private FeishuService feishuService;
 
+    @Autowired
+    private OpportunityDeduplicationService dedupService;
+
     @Value("${feishu.redirect-uri:http://localhost:5173/login-callback}")
     private String redirectUri;
 
@@ -107,6 +110,26 @@ public class OpportunityReminderService {
         logger.info("开始执行定时商机进度提醒扫描任务...");
         int sentCount = runReminderScan();
         logger.info("定时扫描完成，已发送 {} 条提醒消息。", sentCount);
+    }
+
+    /**
+     * Execute periodic background semantic deduplication scan (Cron: daily at 2:00 AM)
+     */
+    @Scheduled(cron = "0 0 2 * * ?")
+    public void scheduledDeduplicationScan() {
+        logger.info("开始定时执行全量语义排重任务...");
+        try {
+            double threshold = Double.parseDouble(dedupService.getConfig("dedup.threshold", "0.85"));
+            List<OpportunityDeduplicationService.DuplicateMatch> duplicates = dedupService.performFullScan(threshold);
+            if (!duplicates.isEmpty()) {
+                dedupService.sendFeishuAlert(duplicates);
+                logger.info("定时排重完成，发现并通知了 {} 组重复商机。", duplicates.size());
+            } else {
+                logger.info("定时排重完成，未发现重复商机。");
+            }
+        } catch (Exception e) {
+            logger.error("Error running scheduled deduplication scan", e);
+        }
     }
 
     /**

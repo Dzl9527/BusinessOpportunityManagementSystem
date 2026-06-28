@@ -13,7 +13,10 @@ import com.boms.service.OpportunityPermissionService;
 import com.boms.service.UserDirectoryService;
 import com.boms.service.FeishuService;
 import com.boms.service.OpportunityReminderService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import com.boms.service.OpportunityDeduplicationService;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -39,6 +42,8 @@ import com.alibaba.excel.EasyExcel;
 @CrossOrigin(origins = "*")
 public class OpportunityController {
 
+    private static final Logger logger = LoggerFactory.getLogger(OpportunityController.class);
+
     @Autowired
     private OpportunityRepository oppRepository;
 
@@ -56,6 +61,9 @@ public class OpportunityController {
 
     @Autowired
     private OpportunityReminderService reminderService;
+
+    @Autowired
+    private OpportunityDeduplicationService dedupService;
 
     private static final Map<String, String> STAGES = new LinkedHashMap<>() {{
         put("prospecting", "发现商机");
@@ -562,7 +570,9 @@ public class OpportunityController {
 
         addSubmissionReminders(opp, getCurrentUserId(userId));
         attachChildren(opp);
-        return oppRepository.save(opp);
+        Opportunity savedOpp = oppRepository.save(opp);
+        triggerDeduplicationCheckAsync(savedOpp, adminUnassignedImport);
+        return savedOpp;
     }
 
     @PostMapping("/submissions")
@@ -636,6 +646,8 @@ public class OpportunityController {
             }
 
             Opportunity saved = oppRepository.save(opp);
+            boolean isUnassigned = "UNASSIGNED".equalsIgnoreCase(saved.getVisibilityStatus());
+            triggerDeduplicationCheckAsync(saved, isUnassigned);
             auditService.recordChanges(saved, before, currentUser, "PC", permissionSource);
             return ResponseEntity.ok(saved);
         }).orElse(ResponseEntity.notFound().build());
@@ -669,10 +681,88 @@ public class OpportunityController {
                                                @RequestParam(required = false) String userName) {
         SystemUser currentUser = resolveCurrentUser(userId, userName);
         Map<String, Object> result = new HashMap<>();
-        List<Opportunity> matches = findDuplicateCandidates(candidate, currentUser);
-        result.put("duplicate", !matches.isEmpty());
-        result.put("matches", matches);
+        
+        // 1. Rule-based duplicates (existing logic)
+        List<Opportunity> ruleMatches = findDuplicateCandidates(candidate, currentUser);
+        
+        // 2. Semantic duplicates (new logic)
+        List<Opportunity> semanticMatches = new ArrayList<>();
+        try {
+            double threshold = Double.parseDouble(dedupService.getConfig("dedup.threshold", "0.85"));
+            List<com.boms.service.OpportunityDeduplicationService.DuplicateMatch> matches = 
+                    dedupService.findDuplicates(candidate, threshold);
+            for (com.boms.service.OpportunityDeduplicationService.DuplicateMatch m : matches) {
+                if (permissionService.canView(currentUser, m.getItemB())) {
+                    semanticMatches.add(m.getItemB());
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Error checking semantic duplicates", e);
+        }
+        
+        // Combine them (avoiding duplicates)
+        Set<Long> matchIds = new HashSet<>();
+        List<Opportunity> combinedMatches = new ArrayList<>();
+        for (Opportunity o : ruleMatches) {
+            if (matchIds.add(o.getId())) {
+                combinedMatches.add(o);
+            }
+        }
+        for (Opportunity o : semanticMatches) {
+            if (matchIds.add(o.getId())) {
+                combinedMatches.add(o);
+            }
+        }
+        
+        result.put("duplicate", !combinedMatches.isEmpty());
+        result.put("matches", combinedMatches);
         return result;
+    }
+
+    private void triggerDeduplicationCheckAsync(Opportunity savedOpp, boolean skipFeishuAlert) {
+        new Thread(() -> {
+            try {
+                // Ensure vector is cached
+                dedupService.getOrCalculateEmbedding(savedOpp);
+                if (!skipFeishuAlert) {
+                    double threshold = Double.parseDouble(dedupService.getConfig("dedup.threshold", "0.85"));
+                    List<com.boms.service.OpportunityDeduplicationService.DuplicateMatch> matches = 
+                            dedupService.findDuplicates(savedOpp, threshold);
+                    if (!matches.isEmpty()) {
+                        dedupService.sendFeishuAlert(matches);
+                    }
+                }
+            } catch (Exception e) {
+                logger.error("Error executing async deduplication check for opportunity ID: " + savedOpp.getId(), e);
+            }
+        }).start();
+    }
+
+    @PostMapping("/reminders/trigger-dedup-scan")
+    public ResponseEntity<Map<String, Object>> triggerDedupScan(@RequestParam(required = false) String userId,
+                                                                 @RequestParam(required = false) String userName) {
+        SystemUser currentUser = resolveCurrentUser(userId, userName);
+        if (!currentUser.isAdmin()) {
+            return ResponseEntity.status(403).build();
+        }
+        
+        new Thread(() -> {
+            try {
+                double threshold = Double.parseDouble(dedupService.getConfig("dedup.threshold", "0.85"));
+                List<com.boms.service.OpportunityDeduplicationService.DuplicateMatch> duplicates = 
+                        dedupService.performFullScan(threshold);
+                if (!duplicates.isEmpty()) {
+                    dedupService.sendFeishuAlert(duplicates);
+                }
+            } catch (Exception e) {
+                logger.error("Error executing manual full deduplication scan", e);
+            }
+        }).start();
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("message", "全量语义排重任务已在后台启动，完成后将通过飞书通知管理员。");
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/mine/page")
