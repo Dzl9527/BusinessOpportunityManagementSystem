@@ -5,7 +5,7 @@
         <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trending-up"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
       </div>
       
-      <h2 style="font-size: 22px; font-weight: 700; margin-bottom: 8px; color: var(--text-primary);">商机宝 CRM</h2>
+      <h2 style="font-size: 22px; font-weight: 700; margin-bottom: 8px; color: var(--text-primary);">设备商机管理系统</h2>
       <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 32px;">飞书生态智能销售商机管理中心</p>
 
       <!-- SSO Loading state -->

@@ -10,13 +10,7 @@ export const useUserStore = defineStore('user', () => {
 
   const fetchContacts = async () => {
     try {
-      const authStore = useAuthStore()
-      const response = await axios.post(`${API_BASE}/users/sync-platform`, null, {
-        params: {
-          adminUserId: authStore.user?.userId,
-          adminName: authStore.user?.name
-        }
-      })
+      const response = await axios.get(`${API_BASE}/users`)
       contacts.value = response.data
       users.value = response.data
     } catch (e) {

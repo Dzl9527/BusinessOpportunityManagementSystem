@@ -34,6 +34,11 @@ public class JwtTokenProvider {
         return jwt.getSubject();
     }
 
+    public String getUserNameFromToken(String token) {
+        DecodedJWT jwt = decodeToken(token);
+        return jwt.getClaim("userName").asString();
+    }
+
     public boolean validateToken(String token) {
         try {
             decodeToken(token);

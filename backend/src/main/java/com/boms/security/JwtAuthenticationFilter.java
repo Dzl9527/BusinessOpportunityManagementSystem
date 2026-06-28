@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import com.boms.service.UserDirectoryService;
 import java.io.IOException;
 import java.util.ArrayList;
 
@@ -21,6 +22,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Autowired
     private JwtTokenProvider tokenProvider;
 
+    @Autowired
+    private UserDirectoryService userDirectoryService;
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
@@ -29,6 +33,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
                 String userId = tokenProvider.getUserIdFromToken(jwt);
+                String userName = tokenProvider.getUserNameFromToken(jwt);
+
+                if (userId != null && !userId.isBlank()) {
+                    if (userDirectoryService.getCurrentUserOptional(userId).isEmpty()) {
+                        userDirectoryService.getOrCreateUser(userId, userName, null, null);
+                    }
+                }
 
                 // Here we simply use userId as the Principal, and no authorities are set yet.
                 // Depending on the role, we might load the user from the database.

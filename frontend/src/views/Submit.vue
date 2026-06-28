@@ -20,7 +20,7 @@
           type="button"
           class="submit-step"
           :class="{ active: activeStep === index, done: index < activeStep }"
-          @click="activeStep = index"
+          @click="goToStep(index)"
         >
           <span>{{ index + 1 }}</span>
           {{ step }}
@@ -36,9 +36,9 @@
         </div>
 
         <div class="submit-section" v-if="activeStep === 0">
-          <Field label="采购单位 *"><input class="form-control" v-model="form.company" required></Field>
-          <Field label="项目名称 *"><input class="form-control" v-model="form.name" required></Field>
-          <Field label="行业 *"><SelectInput v-model="form.industry" :items="optionList('industries')" required /></Field>
+          <Field label="采购单位 *"><input class="form-control" v-model="form.company"></Field>
+          <Field label="项目名称 *"><input class="form-control" v-model="form.name"></Field>
+          <Field label="行业 *"><SelectInput v-model="form.industry" :items="optionList('industries')" /></Field>
           <Field label="供应商公司名称"><input class="form-control" v-model="form.supplierCompany"></Field>
           <Field label="提报人"><input class="form-control" v-model="form.submitter"></Field>
           <Field label="政企市场部经理"><input class="form-control" v-model="form.govMarketManager"></Field>
@@ -50,10 +50,10 @@
 
         <div class="submit-section" v-if="activeStep === 1">
           <Field label="需求设备类型 *" full><MultiSelect v-model="form.deviceTypes" :items="optionList('deviceTypes')" /></Field>
-          <Field label="需求设备品类型号 *"><input class="form-control" v-model="form.deviceModels" required></Field>
+          <Field label="需求设备品类型号 *"><input class="form-control" v-model="form.deviceModels"></Field>
           <Field label="需求数量（台）"><input type="number" class="form-control" v-model.number="form.demandQuantity" min="0"></Field>
-          <Field label="预估采购金额 *"><input type="number" class="form-control" v-model.number="form.estimatedPurchaseAmount" min="0" step="0.01" required></Field>
-          <Field label="金额单位 *"><SelectInput v-model="form.estimatedPurchaseAmountUnit" :items="optionList('amountUnits')" required /></Field>
+          <Field label="预估采购金额 *"><input type="number" class="form-control" v-model.number="form.estimatedPurchaseAmount" min="0" step="0.01"></Field>
+          <Field label="金额单位 *"><SelectInput v-model="form.estimatedPurchaseAmountUnit" :items="optionList('amountUnits')" /></Field>
         </div>
 
         <div class="submit-section" v-if="activeStep === 2">
@@ -64,7 +64,7 @@
         </div>
 
         <div class="submit-section" v-if="activeStep === 3">
-          <Field label="赢率 *"><SelectInput v-model="form.winRateLabel" :items="optionList('winRates')" required /></Field>
+          <Field label="赢率 *"><SelectInput v-model="form.winRateLabel" :items="optionList('winRates')" /></Field>
           <Field label="预计交付时间"><input type="date" class="form-control" v-model="form.expectedDeliveryDate"></Field>
           <Field label="预计投标截止时间"><input type="date" class="form-control" v-model="form.bidDeadline"></Field>
           <Field label="是否中标"><BooleanSelect v-model="form.bidWon" /></Field>
@@ -248,7 +248,69 @@ const activeStep = ref(0)
       attachments: []
     })
 
+    const validateStep = (stepIndex) => {
+      if (stepIndex === 0) {
+        if (!form.company || !form.company.trim()) {
+          appStore.showToast('请填写采购单位', 'error')
+          return false
+        }
+        if (!form.name || !form.name.trim()) {
+          appStore.showToast('请填写项目名称', 'error')
+          return false
+        }
+        if (!form.industry || !form.industry.trim()) {
+          appStore.showToast('请选择行业', 'error')
+          return false
+        }
+      }
+      if (stepIndex === 1) {
+        if (!form.deviceTypes || !form.deviceTypes.trim()) {
+          appStore.showToast('请选择需求设备类型', 'error')
+          return false
+        }
+        if (!form.deviceModels || !form.deviceModels.trim()) {
+          appStore.showToast('请填写需求设备品类型号', 'error')
+          return false
+        }
+        if (form.estimatedPurchaseAmount === null || form.estimatedPurchaseAmount === undefined || form.estimatedPurchaseAmount === '') {
+          appStore.showToast('请填写预估采购金额', 'error')
+          return false
+        }
+        if (Number(form.estimatedPurchaseAmount) <= 0) {
+          appStore.showToast('预估采购金额必须大于0', 'error')
+          return false
+        }
+        if (!form.estimatedPurchaseAmountUnit || !form.estimatedPurchaseAmountUnit.trim()) {
+          appStore.showToast('请选择金额单位', 'error')
+          return false
+        }
+      }
+      if (stepIndex === 3) {
+        if (!form.winRateLabel || !form.winRateLabel.trim()) {
+          appStore.showToast('请选择赢率', 'error')
+          return false
+        }
+      }
+      return true
+    }
+
+    const goToStep = (index) => {
+      if (index < activeStep.value) {
+        activeStep.value = index
+        return
+      }
+      for (let step = activeStep.value; step < index; step++) {
+        if (!validateStep(step)) {
+          return
+        }
+      }
+      activeStep.value = index
+    }
+
     const nextStep = async () => {
+      if (!validateStep(activeStep.value)) {
+        return
+      }
       if (activeStep.value <= 1 && form.company && form.name) {
         const result = await oppStore.checkDuplicates(form)
         duplicateMatches.value = result.matches || []
@@ -272,6 +334,12 @@ const activeStep = ref(0)
     }
 
     const handleSubmit = async () => {
+      for (let i = 0; i < formSteps.length; i++) {
+        if (!validateStep(i)) {
+          activeStep.value = i
+          return
+        }
+      }
       submitting.value = true
       try {
         await oppStore.submitOpportunity({ ...form, attachments: [...form.attachments] })
@@ -293,6 +361,7 @@ const activeStep = ref(0)
       duplicateMatches,
       attachmentDraft,
       optionList,
+      goToStep,
       nextStep,
       prevStep,
       addLocalAttachment,

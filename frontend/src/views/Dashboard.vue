@@ -108,23 +108,25 @@
 </template>
 
 <script>
-import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch, computed } from 'vue'
+import { storeToRefs } from 'pinia'
 import Chart from 'chart.js/auto'
 import axios from 'axios'
 import { useAuthStore } from '../stores/useAuthStore'
 import { useOppStore } from '../stores/useOppStore'
-import { useAppStore } from '../stores/useAppStore'
+import { useAppStore, API_BASE } from '../stores/useAppStore'
 import { useUserStore } from '../stores/useUserStore'
 import { useMetricsStore } from '../stores/useMetricsStore'
 
 export default {
   setup() {
-        const authStore = useAuthStore()
+    const authStore = useAuthStore()
     const oppStore = useOppStore()
     const appStore = useAppStore()
     const userStore = useUserStore()
     const metricsStore = useMetricsStore()
-const canvasFunnel = ref(null)
+    const { metrics } = storeToRefs(metricsStore)
+    const canvasFunnel = ref(null)
     const canvasStages = ref(null)
     const canvasTrend = ref(null)
 
@@ -325,7 +327,7 @@ const canvasFunnel = ref(null)
     })
 
     return {
-      metrics: metricsStore.metrics,
+      metrics,
       canvasFunnel,
       canvasStages,
       canvasTrend,

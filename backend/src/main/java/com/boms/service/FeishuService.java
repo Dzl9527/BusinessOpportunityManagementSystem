@@ -63,11 +63,12 @@ public class FeishuService {
     }
 
     public Map<String, String> getUserInfoByCode(String code) {
-        if (sandboxMode) return Map.of("userId", "zhang_jingli", "name", "张经理", "avatarUrl", "");
+        if (sandboxMode) return Map.of("userId", "zhang_jingli", "name", "张经理", "avatarUrl", "", "employeeNo", "zhang_jingli");
         if (code != null && code.startsWith("mock_code:")) {
-            return Map.of("userId", code.substring(10), "name", code.substring(10), "avatarUrl", "");
+            String val = code.substring(10);
+            return Map.of("userId", val, "name", val, "avatarUrl", "", "employeeNo", val);
         }
-        if ("mock_code".equals(code)) return Map.of("userId", "zhang_jingli", "name", "张经理", "avatarUrl", "");
+        if ("mock_code".equals(code)) return Map.of("userId", "zhang_jingli", "name", "张经理", "avatarUrl", "", "employeeNo", "zhang_jingli");
         
         String token = getTenantAccessToken();
         String url = "https://open.feishu.cn/open-apis/authen/v1/oidc/access_token";
@@ -97,16 +98,18 @@ public class FeishuService {
                     if (userInfoResponse.getStatusCode().is2xxSuccessful() && userInfoResponse.getBody() != null) {
                         Map<String, Object> userInfoData = (Map<String, Object>) userInfoResponse.getBody().get("data");
                         if (userInfoData != null) {
-                            String userId = (String) userInfoData.get("user_id");
-                            if (userId == null) userId = (String) userInfoData.get("open_id");
-                            if (userId != null) {
-                                String name = (String) userInfoData.get("name");
-                                String avatarUrl = (String) userInfoData.get("avatar_url");
-                                Map<String, String> result = new HashMap<>();
-                                result.put("userId", userId);
-                                result.put("name", name != null ? name : userId);
-                                result.put("avatarUrl", avatarUrl != null ? avatarUrl : "");
-                                return result;
+                                String openId = (String) userInfoData.get("open_id");
+                                String feishuUserId = (String) userInfoData.get("user_id");
+                                String userId = openId != null ? openId : feishuUserId;
+                                if (userId != null) {
+                                    String name = (String) userInfoData.get("name");
+                                    String avatarUrl = (String) userInfoData.get("avatar_url");
+                                    Map<String, String> result = new HashMap<>();
+                                    result.put("userId", userId);
+                                    result.put("employeeNo", feishuUserId);
+                                    result.put("name", name != null ? name : userId);
+                                    result.put("avatarUrl", avatarUrl != null ? avatarUrl : "");
+                                    return result;
                             }
                         }
                     }
@@ -281,7 +284,8 @@ public class FeishuService {
         if (sandboxMode) return true;
         try {
             String token = getTenantAccessToken();
-            String url = "https://open.feishu.cn/open-apis/im/v1/messages?receive_id_type=open_id";
+            String receiveIdType = toUserId.startsWith("ou_") ? "open_id" : "user_id";
+            String url = "https://open.feishu.cn/open-apis/im/v1/messages?receive_id_type=" + receiveIdType;
             
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -298,7 +302,13 @@ public class FeishuService {
             
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
                 Integer code = (Integer) response.getBody().get("code");
-                return code != null && code == 0;
+                if (code != null && code == 0) {
+                    return true;
+                } else {
+                    logger.error("Feishu Message Failed, response: {}", response.getBody());
+                }
+            } else {
+                logger.error("Feishu Message HTTP Error: {}", response.getStatusCode());
             }
         } catch (Exception e) {
             logger.error("Feishu Message Error", e);

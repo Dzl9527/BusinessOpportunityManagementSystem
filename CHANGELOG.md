@@ -21,6 +21,57 @@
 - **Docker 部署环境配置**:
   - 在 `docker-compose.yml` 中新增了 `DASHSCOPE_API_KEY` 和 `ADMIN_FEISHU_OPENID` 两个环境变量配置，确保容器化部署和集群环境中支持大模型向量接口调用和飞书消息收发。
 
+## [2.1.3] - 2026-06-20
+
+### Fixed
+- **工作台大盘响应式加载与缓存优化**:
+  - 解决工作台页面刷新时指标卡片与图表数据加载延迟/显示空白（`0.00`）的问题。在前端 `Dashboard.vue` 中引入 Pinia 的 `storeToRefs`，实现对 metrics 异步请求状态更新的响应式追踪与图表重绘。
+  - 移除了后端 `OpportunityController.java` 中对大盘指标接口 `/api/opportunities/metrics` 和 `/api/opportunities/charts/*` 的 `@Cacheable` 缓存注解，避免本地 H2 内存数据库初始化及未注册登录时缓存初始零值，确保数据 100% 实时准确。
+- **JWT 自动用户创建与健壮性增强**:
+  - 优化 `JwtAuthenticationFilter.java` 安全过滤器，在校验 JWT 成功但发现数据库中无该用户记录时，自动调用 `getOrCreateUser` 创建并初始化用户档案，彻底杜绝后续商机查询因缺少用户记录引起的空指针或数据引用异常。
+  - 在 `JwtTokenProvider.java` 中新增 `getUserNameFromToken` 辅助方法，以便在拦截器中直接获取解析后的用户真实姓名。
+- **JVM 字符编码兼容与管理员身份判定修复**:
+  - 解决 Windows 系统下 JVM 默认 GBK 字符集导致 UTF-8 中文用户名 `邓钟璐` 匹配比对失败、无法自动赋予管理员权限的 bug。新增基于平台 ID `ou_603f46a19d2c51d748f1f85a88ed239c` 的硬编码判定，确保管理员身份权限判定万无一失。
+- **飞书用户同步性能与权限隔离优化**:
+  - 移除了前端 `List.vue` 中冗余且未被实际渲染使用的 `fetchContacts()` 调用，消除了普通用户页面挂载时的 403 控制台报错。
+  - 重构前端 `useUserStore.ts` 的 `fetchContacts` 方法，将其改回纯读取本地数据库的 `GET /api/users` 接口，从而将实时慢同步与列表只读查询彻底剥离，防止同步延迟阻塞页面加载。
+  - 调整后端 `UserController.java` 的 `listUsers` 端点逻辑，放开其对非管理员用户的 403 过滤拦截，使普通用户能正常拉取指派人/跟进人下拉列表；同时继续保留对敏感同步接口（`POST /sync-platform`）的严格管理员验证。
+- **移动端商机列表显示修复**:
+  - 修复了手机端访问商机列表时数据为空白的兼容性问题。补充了 `List.vue` 中缺失 of `.mobile-opportunity-cards` 移动端响应式卡片 HTML 结构，确保在窄屏幕下（隐藏表格布局时）正常渲染商机数据流。
+
+## [2.1.2] - 2026-06-20
+
+### Fixed
+- **系统设置布局与独立滚动优化**:
+  - 修复系统设置页面向下滚动时，顶部的 Tab 导航菜单被滚走消失的问题。现在顶部导航 Tab 已通过 Flexbox 布局固定在视口最上方，仅表单配置内容（如智能提醒配置等）可以独立纵向滚动。
+  - 修复了在较矮视口或长表单内容下，底部的“保存飞书配置”、“同步飞书通讯录”、“保存提醒配置”和“立即执行扫描”等关键操作按钮被截断裁剪的问题。
+- **本地 Mock 登录工号显示修复**:
+  - 修复本地运行/沙箱模拟登录时用户中心“工号”显示为 `-` 的问题。
+  - 后端 `FeishuService.java` 中在 mock 登录校验分支中返回的 Map 增加 `employeeNo` 字段，确保在本地模拟登录时能够正常持久化并在前端回显工号（如 `22070028`）。
+- **商机提报分步表单必填项（*）校验拦截**:
+  - 移除了与隐藏 DOM 冲突的 HTML5 原生 `required` 属性，采用分步 JS 拦截机制 `validateStep`，确保用户必须填满当前步骤必填项后才能执行“下一步”或跳转页签。
+  - 在最终提交商机时增加全局校验，未填项会自动触发跳转并 Toast 提示。
+- **全局 Toast 提示位置移至网页顶部并新增淡出过渡动画**:
+  - 修改 `.toast-container` 的定位，使提示卡片水平居中挂接在网页顶部，更符合现代 Web 设计直观、醒目的视觉习惯。
+  - 在 `App.vue` 中使用 `<transition name="toast-fade">` 标签包裹提示元素，结合 CSS 贝塞尔曲线，使 Toast 出现和消失时伴随柔和的纵向微弱位移、轻微缩放及不透明度淡入淡出。
+  - Toast 增加了微弱的白色半透明边框与背景虚化滤镜 (`backdrop-filter: blur(12px)`)，呈现质感极佳的毛玻璃视觉效果。
+- **系统品牌更名为设备商机管理系统**:
+  - 全面将“商机宝 CRM”品牌文案统一重构为“设备商机管理系统”，包括 index.html、App.vue 侧边栏、路由 title 切换与 Login 页面。
+- **本地开发环境测试数据预置**:
+  - 在 `application.yml` 中将 `app.seed-demo-data` 设为 `true`，以在本地 H2 数据库初始化时自动加载 4 条测试商机和相关任务、流水数据，完美点亮并呈现工作台数据图表。
+
+## [2.1.1] - 2026-06-19
+
+### Fixed
+- **飞书扫码登录旧库兼容修复**:
+  - 修复生产 MySQL 旧表仍保留 `system_users.wecom_user_id NOT NULL` 时，飞书扫码回调创建用户失败并返回登录验证失败的问题。
+  - 后端 `SystemUser` 现在同时维护 `platformUserId` 与旧 `wecomUserId`，并在用户查询和创建时保持两者一致，兼容历史权限字段。
+  - 新增 `database/2026-06-19-system-users-platform-id-compat.sql`，用于生产库一次性回填并校准用户身份字段。
+- **飞书消息发送权限异常拦截修复**: 
+  - 修复了用户提报商机后无法收到智能体消息通知的 Bug（飞书报错 `Access denied` 缺少 `contact:user.employee_id:readonly` 权限）。
+  - **动态通讯协议降级**: 在调用 `/im/v1/messages` 接口时，新增根据 ID 前缀自动判断类型的逻辑，遇到非 `open_id`（如员工工号 `22070028`）时，自动将 `receive_id_type` 切换为 `user_id`，避免参数写死导致的 400 Bad Request 错误。
+  - **登录标识替换引擎**: 在用户通过扫码 OAuth 授权登录的回调处理环节（`getUserInfoByCode`），强制优先提取并返回用户的 `open_id` 作为系统持久化主键 `platformUserId`。这一改动让后续的消息推送自动使用 `open_id` 进行分发，完美避开了飞书对 `user_id` 的企业通讯录敏感权限校验。同时，与现有的系统组织架构后台同步任务实现了标识符层面的完全统一。
+
 ## [2.1.0] - 2026-06-17
 
 ### Added
@@ -54,7 +105,7 @@
 ### Added
 - **自动化测试与构建 (Phase 5)**: 引入基于 JUnit 5 与 Mockito 的后端单元测试体系，完成 `JwtTokenProvider`, `SecurityUtils`, `OpportunityAuditService` 的核心安全链路覆盖测试；部署了 `.github/workflows/ci.yml` 构建流水线护城河。
 - **前端架构演进 (Phase 4)**: 全面引入 TypeScript 与 Pinia。
-  - 将原有的巨型 `store/index.js` 按领域拆分为 `useAuthStore.ts`, `useOppStore.ts`, `useAppStore.ts` 等模块化状态仓库。
+  - 将原有的巨型 `store/index.js` 按领域拆分为 `useAuthStore.ts`, `useOppStore.ts`, `useAppStore.ts` 等模块化状态仓库.
   - 配置 `tsconfig.json` 并应用渐进式 TS 演进策略（`noImplicitAny: false`），所有 Vue 组件全部升级为 `<script setup lang="ts">`。
 - **Redis 缓存架构 (Phase 3)**: 引入 `spring-boot-starter-data-redis` 与 `spring-boot-starter-cache`，对高频查询的四个商机大盘指标接口与企业微信通讯录接口增加缓存支持 (`@Cacheable`)，并设置全局 TTL 为 5 分钟以保证最终一致性。
 - **Docker 化基础设施 (Phase 1)**: 新增项目级 `docker-compose.yml` 及前后端 `Dockerfile`，支持生产环境 MySQL 8.0 + Redis 7.0 的一键部署编排。
@@ -77,7 +128,7 @@
 - **企业微信进度提醒系统**：实现 7 大提醒触发场景（提报成功、投标截止、预计交付、周更新超期、授权跟进、报备催办、中标结果补录）的逻辑判定、H2数据库持久化与防重复推送。
 - **配置与联调控制台**：在前端设置页（Settings）新增提醒天数配置与开关设置，并提供“立即执行提醒扫描”和“同步企微通讯录”功能，提高可视化联调便利性。
 - 新增 GitHub Issue 模板：Bug 报告、功能需求、开发任务。
-- 新增 GitHub PR 模板，补充权限、验证、文档和发布检查项。
+- 新增 GitHub PR 模板，补充权限、验证、文档 and 发布检查项。
 - 新增版本规划文档：`docs/product/版本规划.md`。
 - 新增根级发布记录，用于跟踪版本变化。
 - 新增手机端 `用户中心` 页面，支持登录态展示、权限说明、主题切换和退出登录。

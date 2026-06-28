@@ -9,4 +9,6 @@ import java.util.Optional;
 @Repository
 public interface SystemUserRepository extends JpaRepository<SystemUser, Long> {
     Optional<SystemUser> findByPlatformUserId(String platformUserId);
+
+    Optional<SystemUser> findByPlatformUserIdOrWecomUserId(String platformUserId, String wecomUserId);
 }
